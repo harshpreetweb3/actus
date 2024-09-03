@@ -175,12 +175,64 @@ mod radixdao {
             //and facilitating communication between smart contracts and external applications.
 
             // TODO: THERE WOULD BE INTRIGUING TO SEE WHERE THIS EMISSION IS BEING USED?
-
+ 
             (component, owner_badge)
 
         }
 
+        // TODO: OBTAIN A COMMUNITY TOKEN
+        
+        pub fn obtain_community_token(
+            &mut self,
+            mut xrd : Bucket,
+            token_amount : Decimal,
+            minter_address : Option<String> // ! but tokens are already minted by community creator
+        ) 
+           -> (Bucket, Bucket)
+        {
+            //TODO: given amount >= amount needed to purchase community tokens as per required amount
+            assert!((self.token_price * token_amount) <= xrd.amount());
+
+            let collected_xrd = xrd.take(self.token_price * token_amount);
+
+            let power_share = self.dao_token.take(token_amount);
+
+            let amount_paid = self.token_price * token_amount;
+
+            self.shares.put(collected_xrd);
+
+            //emit event
+            
+            let event_metadata = TokenWeightBuyToken {
+
+                amount : token_amount,
+
+                resource_address : self.dao_token_address,
+
+                amount_paid,
+
+                current_component_share : self.shares.amount() // current component's collected xrd
+
+            };
+
+            let component_address = Runtime::global_address();
+
+            Runtime::emit_event(PandaoEvent {
+
+                event_type : EventType::TOKEN_BOUGHT,
+
+                dao_type : DaoType::TokenWeight,
+
+                component_address,
+
+                meta_data : DaoEvent::TokenWeightedTokenPurchase(event_metadata)
+
+            });  
+
+            (xrd, power_share)
 
 
-    }
+        }
+
+    }   
 }

@@ -51,10 +51,15 @@ pub struct TokenWightedDeployment {
 
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub struct TokenWeightBuyToken {
+
     pub amount: Decimal,
+
     pub resource_address: ResourceAddress,
+
     pub amount_paid: Decimal,
+
     pub current_component_share: Decimal,
+
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]

@@ -1,4 +1,5 @@
 use scrypto::prelude::*;
+
 #[blueprint]
 mod pandao_praposal {
     pub struct TokenWeightProposal {
@@ -32,7 +33,9 @@ mod pandao_praposal {
         // A mapping of addresses to their respective vote weights.
         // pub votes: HashMap<Address, Decimal>,
     }
+
     impl TokenWeightProposal  {
+        
         pub fn new(
             title: String ,
             description : String , 

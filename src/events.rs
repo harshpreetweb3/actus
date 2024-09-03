@@ -3,18 +3,28 @@ use scrypto::prelude::*;
 #[allow(non_camel_case_types)]
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub enum EventType {
+
     DEPLOYMENT,
+
     TOKEN_BOUGHT,
+
     TOKEN_SELL,
+
     PRAPOSAL,
+
     VOTE,
+
     EXECUTE_PROPOSAL
+
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub enum DaoType {
-    TokenWeight,
+
+    TokenWeight
+
 }
+
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub struct TokenWightedDeployment {
 
@@ -62,10 +72,15 @@ pub struct PraposalMetadata {
 
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub enum DaoEvent {
+
     ProposalExecute(PraposalExecute),
+
     TokenWeightedDEployment(TokenWightedDeployment),
+
     TokenWeightedTokenPurchase(TokenWeightBuyToken),
+
     PraposalDeployment(PraposalMetadata),
+
     PraposalVote(ProposalVote) 
 }
 
@@ -80,6 +95,7 @@ pub struct ProposalVote{
     pub voting_amount : Decimal ,
     pub againts:bool
 }
+
 // create an event for community_creation
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub struct PandaoEvent {

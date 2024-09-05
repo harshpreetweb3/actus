@@ -11,7 +11,6 @@ mod radixdao {
     use proposal::pandao_praposal::TokenWeightProposal;
 
     pub struct TokenWeigtedDao {
-
         current_praposal: Option<Global<TokenWeightProposal>>,
 
         dao_token: Vault,
@@ -30,9 +29,7 @@ mod radixdao {
     }
 
     impl TokenWeigtedDao {
-        
         pub fn initiate(
-
             //community name | community title
             organization_name: String,
 
@@ -56,11 +53,10 @@ mod radixdao {
 
             //elaborate community
             description: String,
-
         ) -> (Global<TokenWeigtedDao>, Bucket) {
-
             // reserve an address for the DAO component
-            let (address_reservation, _) = Runtime::allocate_component_address(TokenWeigtedDao::blueprint_id());
+            let (address_reservation, _) =
+                Runtime::allocate_component_address(TokenWeigtedDao::blueprint_id());
 
             let owner_badge_description = format!("{}'s owner badge", &organization_name);
 
@@ -72,10 +68,10 @@ mod radixdao {
             // * owner badge creation
             // * Moreover this is fungible token (IT MUST BE NON_FUNGIBLE)
 
-            // Owner Badge Creation: Creates a non-divisible owner badge with metadata containing 
-            // the organization's name and icon URL. 
+            // Owner Badge Creation: Creates a non-divisible owner badge with metadata containing
+            // the organization's name and icon URL.
             // ! This badge likely represents administrative control over the DAO.
-            
+
             // * THERE CANNOT BE ADMINISTRATIVE CONTROL
 
             let owner_badge: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
@@ -107,7 +103,6 @@ mod radixdao {
             let owner_token_addresss = owner_badge.resource_address();
 
             let component = Self {
-
                 token_price: token_price.clone(),
 
                 organization_name: organization_name.clone(),
@@ -135,7 +130,6 @@ mod radixdao {
 
             // create a metadata for event named TokenWeightedDeployment
             let event_metadata = TokenWightedDeployment {
-
                 component_address,
 
                 token_address: dao_token_address,
@@ -159,7 +153,6 @@ mod radixdao {
 
             // emit event | event emission
             Runtime::emit_event(PandaoEvent {
-
                 event_type: EventType::DEPLOYMENT,
 
                 dao_type: DaoType::TokenWeight,
@@ -167,29 +160,25 @@ mod radixdao {
                 component_address,
 
                 meta_data: DaoEvent::TokenWeightedDEployment(event_metadata),
-
             });
 
-            //Event emission in blockchain systems is primarily used for transparency, 
-            //enabling tracking of significant actions and changes in state, 
+            //Event emission in blockchain systems is primarily used for transparency,
+            //enabling tracking of significant actions and changes in state,
             //and facilitating communication between smart contracts and external applications.
 
             // TODO: THERE WOULD BE INTRIGUING TO SEE WHERE THIS EMISSION IS BEING USED?
- 
-            (component, owner_badge)
 
+            (component, owner_badge)
         }
 
         // TODO: OBTAIN A COMMUNITY TOKEN
-        
+
         pub fn obtain_community_token(
             &mut self,
-            mut xrd : Bucket,
-            token_amount : Decimal,
-            minter_address : Option<String> // ! but tokens are already minted by community creator
-        ) 
-           -> (Bucket, Bucket)
-        {
+            mut xrd: Bucket,
+            token_amount: Decimal,
+            minter_address: Option<String>, // ! but tokens are already minted by community creator
+        ) -> (Bucket, Bucket) {
             //TODO: given amount >= amount needed to purchase community tokens as per required amount
             assert!((self.token_price * token_amount) <= xrd.amount());
 
@@ -202,37 +191,140 @@ mod radixdao {
             self.shares.put(collected_xrd);
 
             //emit event
-            
+
             let event_metadata = TokenWeightBuyToken {
+                amount: token_amount,
 
-                amount : token_amount,
-
-                resource_address : self.dao_token_address,
+                resource_address: self.dao_token_address,
 
                 amount_paid,
 
-                current_component_share : self.shares.amount() // current component's collected xrd
+                current_component_share: self.shares.amount(), // current component's collected xrd
+            };
+
+            let component_address = Runtime::global_address();
+
+            Runtime::emit_event(PandaoEvent {
+                event_type: EventType::TOKEN_BOUGHT,
+
+                dao_type: DaoType::TokenWeight,
+
+                component_address,
+
+                meta_data: DaoEvent::TokenWeightedTokenPurchase(event_metadata),
+            });
+
+            (xrd, power_share)
+        }
+
+        pub fn withdraw_power(&mut self, voting_power: Bucket) -> Bucket {
+
+            // put the voting power back
+            assert!(
+                self.current_praposal.is_none(),
+                "token can not be sold when there is an active praposal or incomplete proposal"
+            );
+
+            let power_amount = voting_power.amount();
+
+            self.dao_token.put(voting_power);
+
+            let event_metadata = TokenWeightBuyToken {
+
+                amount: power_amount,
+
+                resource_address: self.dao_token_address.clone(),
+
+                amount_paid: power_amount * self.buy_back_price,
+
+                current_component_share: self.shares.amount()
 
             };
 
             let component_address = Runtime::global_address();
 
             Runtime::emit_event(PandaoEvent {
-
-                event_type : EventType::TOKEN_BOUGHT,
-
-                dao_type : DaoType::TokenWeight,
-
+                event_type: EventType::TOKEN_SELL,
+                dao_type: DaoType::TokenWeight,
                 component_address,
+                meta_data: DaoEvent::TokenWeightedTokenPurchase(event_metadata),
+            });
 
-                meta_data : DaoEvent::TokenWeightedTokenPurchase(event_metadata)
-
-            });  
-
-            (xrd, power_share)
-
+            self.shares.take(power_amount * self.buy_back_price)
 
         }
 
-    }   
+        pub fn create_praposal(
+            &mut self,
+            title: String,
+            description: String,
+            minimun_quorum: u8,
+            start_time: scrypto::time::UtcDateTime,
+            end_time: scrypto::time::UtcDateTime,
+        ) -> Global<crate::proposal::pandao_praposal::TokenWeightProposal> {
+
+            use crate::proposal::pandao_praposal::TokenWeightProposal;
+
+            assert!(
+                self.current_praposal.is_none(),
+                "there is already a praposal underway , can not create more"
+            );
+
+            let (global_proposal_component, _) = TokenWeightProposal::new(
+                title.clone(),
+                description.clone(),
+                minimun_quorum,
+                start_time,
+                end_time,
+                self.owner_token_addresss.clone(),
+                self.dao_token_address.clone(),
+            );
+
+            // global_proposal_component.callme("string".into()) ;
+            let start_time_ts: i64 = start_time.to_instant().seconds_since_unix_epoch;
+            let end_time_ts: i64 = end_time.to_instant().seconds_since_unix_epoch;
+            let praposal_metadata = PraposalMetadata {
+                title: title,
+                description: description,
+                minimum_quorum: minimun_quorum.into(),
+                end_time_ts,
+                start_time_ts,
+                owner_token_address: self.owner_token_addresss.clone(),
+                component_address: global_proposal_component.address(),
+            };
+            let component_address = Runtime::global_address();
+
+            Runtime::emit_event(PandaoEvent {
+                event_type: EventType::PRAPOSAL,
+                dao_type: DaoType::TokenWeight,
+                meta_data: DaoEvent::PraposalDeployment(praposal_metadata),
+                component_address,
+            });
+
+            // assign proposal to component
+            self.current_praposal = Some(global_proposal_component);
+            global_proposal_component
+        }
+
+        pub fn execute_proposal(&mut self) {
+            if let Some(proposal) = self.current_praposal {
+                let praposal_metadata = PraposalExecute {
+                    praposal_address: proposal.address(),
+                };
+                let component_address = Runtime::global_address();
+
+                Runtime::emit_event(PandaoEvent {
+                    event_type: EventType::EXECUTE_PROPOSAL,
+                    dao_type: DaoType::TokenWeight,
+                    meta_data: DaoEvent::ProposalExecute(praposal_metadata),
+                    component_address,
+                });
+                self.current_praposal = None;
+            } else {
+                assert!(false, "there is no current active proposal")
+            }
+        }
+
+        
+    }
 }

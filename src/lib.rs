@@ -1,4 +1,4 @@
-//! blue print for
+// blue print for
 mod events;
 use crate::events::*;
 mod proposal;
@@ -17,8 +17,8 @@ mod radixdao {
 
     // enable_method_auth! {
     //  methods{
-    //     // change_praposal => restrict_to : [OWNER] ;
-    //     // get_praposal_status => PUBLIC ;
+    //     change_praposal => restrict_to : [OWNER] ;
+    //     get_praposal_status => PUBLIC ;
     //     obtain_token => PUBLIC ;
     //     withdraw_power => PUBLIC ;
     //     create_praposal => restrict_to : [OWNER] ;
@@ -353,3 +353,11 @@ mod radixdao {
         }
     }
 }
+
+
+// resim call-function package_sim1pk3cmat8st4ja2ms8mjqy2e9ptk8y6cx40v4qnfrkgnxcp2krkpr92 TokenWeigtedDao initiate "Panjab Investment DAO" 100 0 5 2 "https://pbs.twimg.com/profile_images/1643159245389713408/47gnTbms_200x200.jpg" "https://pbs.twimg.com/profile_images/1548373397289455616/OFhGnboY_400x400.jpg" "This is a DAO for managing community projects"
+
+// component_sim1cpwu4wc6rg0am8l9prnh2lzqkk6hue6stzqhdx48rzvek2mmm5vp0p
+
+// resim call-method component_sim1cpwu4wc6rg0am8l9prnh2lzqkk6hue6stzqhdx48rzvek2mmm5vp0p obtain_token resource_sim1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxakj8n3:5 1.0 "n"
+    

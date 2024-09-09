@@ -1,0 +1,17 @@
+CALL_FUNCTION
+    Address("package_tdx_2_1pk03d5zps23hj323gfcwdyzz2c904vv3ara3e280nf2mcvxpc4cwm4")
+    "TokenWeigtedDao"
+    "initiate"
+    "apple"
+    10i32
+    0u8
+    Decimal("1.0")
+    Decimal("0.5")
+    "https://picsum.photos/200/300"
+    "https://picsum.photos/200/300"
+    "jbgcbwdcnlcwec"
+;
+CALL_METHOD
+    Address("account_tdx_2_128wx75khgz5rstma5aapejz3656eluz43v3jruz2s3kv3n0urr8m23")
+    "deposit_batch"
+    Expression("ENTIRE_WORKTOP")

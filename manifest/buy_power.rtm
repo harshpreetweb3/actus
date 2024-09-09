@@ -1,0 +1,26 @@
+CALL_METHOD
+    Address("{account_address}")
+    "withdraw"
+    Address("resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc")
+    Decimal("{XRD_take}")
+;
+
+TAKE_FROM_WORKTOP
+    Address("resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc")
+    Decimal("{XRD_take}")
+    Bucket("bucket1")
+;
+
+CALL_METHOD
+Address("{community_address}")
+"obtain_token"
+Bucket("bucket1")
+Decimal("{token_take}")
+;
+
+
+CALL_METHOD
+    Address("{account_address}")
+    "deposit_batch"
+    Expression("ENTIRE_WORKTOP")
+;

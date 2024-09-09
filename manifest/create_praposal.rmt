@@ -1,0 +1,27 @@
+CALL_METHOD
+    Address("${account}")
+    "create_proof_of_amount"
+    Address("${owner_badge}")
+    Decimal("1")
+;
+
+CALL_METHOD
+Address("component_tdx_2_1czn7zdasvnc9mkuv3ceqh29zsq4ytdj420puuaf5ftkx798u3lc3hq")
+"create_praposal"
+"eat banana"
+1u8
+Tuple(
+2024u32 ,
+10u8 ,
+1u8 ,
+1u8 ,
+1u8 ,
+1u8)
+Tuple(
+2024u32 ,
+11u8 ,
+1u8 ,
+1u8 ,
+1u8 ,
+1u8)
+;

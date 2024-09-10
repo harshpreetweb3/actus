@@ -263,7 +263,7 @@ mod radixdao {
             title: String,
             description: String,
             minimun_quorum: u8,
-            start_time: scrypto::time::UtcDateTime,
+            start_time: scrypto::time::UtcDateTime,     
             end_time: scrypto::time::UtcDateTime,
         ) -> Global<crate::proposal::pandao_praposal::TokenWeightProposal> {
             use crate::proposal::pandao_praposal::TokenWeightProposal;
@@ -354,13 +354,14 @@ mod radixdao {
     }
 }
 
-
+//*initialize
 // resim call-function package_sim1p4nk9h5kw2mcmwn5u2xcmlmwap8j6dzet7w7zztzz55p70rgqs4vag TokenWeigtedDao initiate "Panjab Investment DAO" 100 0 5 2 "https://pbs.twimg.com/profile_images/1643159245389713408/47gnTbms_200x200.jpg" "https://pbs.twimg.com/profile_images/1548373397289455616/OFhGnboY_400x400.jpg" "This is a DAO for managing community projects"
+// resim call-function package_sim1p4nk9h5kw2mcmwn5u2xcmlmwap8j6dzet7w7zztzz55p70rgqs4vag TokenWeigtedDao initiate "Panjab Investment DAO" 100 0 5 2 "https://pbs.twimg.com/profile_images/1643159245389713408/47gnTbms_200x200.jpg" "https://pbs.twimg.com/profile_images/1548373397289455616/OFhGnboY_400x400.jpg" "This is a DAO for managing community projects" --manifest instantiate_pandao.rtm
 
 // account_sim1c956qr3kxlgypxwst89j9yf24tjc7zxd4up38x37zr6q4jxdx9rhma
 // component_sim1czwnyl3pfn955s45a2js64w8zjlptwz4y3w4wwwl944rk2l2ceapsc
 
-// obtain_token
+//*obtain_token
 // resim call-method component_sim1czwnyl3pfn955s45a2js64w8zjlptwz4y3w4wwwl944rk2l2ceapsc obtain_token resource_sim1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxakj8n3:5 1
 // resim call-method component_sim1cpwu4wc6rg0am8l9prnh2lzqkk6hue6stzqhdx48rzvek2mmm5vp0p obtain_token resource_sim1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxakj8n3:5 1
     
@@ -368,3 +369,111 @@ mod radixdao {
 // resim call-method component_sim1czwnyl3pfn955s45a2js64w8zjlptwz4y3w4wwwl944rk2l2ceapsc create_praposal "Panda Fridays" "Introduce a fun Panda-themed event every Friday." 10 1694774400 1695052800
 // resim call-method 02012345 create_praposal "Panda Fridays" "Introduce a fun Panda-themed event every Friday." 10 1694774400 1695052800
 // resim call-method component_sim1czwnyl3pfn955s45a2js64w8zjlptwz4y3w4wwwl944rk2l2ceapsc create_praposal "Proposal Title" "Description" 10 {"year":2024,"month":9,"day_of_month":15,"hour":0,"minute":0} {"year":2024,"month":9,"day_of_month":20,"hour":23,"minute":59}
+
+//*test-net
+// txid_tdx_2_1uyf8cmuvgd0kredvzg2fh4mfff79zaj5t6trmnwkaet3n36ahkcq6dcwgq
+// package_tdx_2_1phtjjxh563e37wtp008re5zlpau7v7y8xudpy9mmw4cp22k56frszt
+// component_tdx_2_1czddjhay2jv0e03h78mapw2k3y8mnqmn47hxyz7svm4tm76wf8azmq
+// account_tdx_2_1285pq36tg53usvdhvwjlu40plmzf6dj8uyhrqxp6j0kvpl2znqtt54
+// resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc
+//*owner badge
+// resource_tdx_2_1tkam4tmrj2xl4hry7gsvpx0sq56xljudckmxxhr72tehqj4mq3rzna
+
+//*community native token
+//resource_tdx_2_1thp48upl275dm4ar0675we2ew83fn04k3cg7ca57swlzumctk4xvgc
+
+
+//*manifest to call obtain_token*/
+// CALL_METHOD
+//             Address("account_tdx_2_1285pq36tg53usvdhvwjlu40plmzf6dj8uyhrqxp6j0kvpl2znqtt54")
+//             "withdraw"
+//             Address("resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc")
+//             Decimal("5")
+//         ;
+
+// TAKE_FROM_WORKTOP
+//             Address("resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc")
+//             Decimal("5")
+//             Bucket("bucket1")
+//         ;
+
+// CALL_METHOD
+//         Address("component_tdx_2_1czddjhay2jv0e03h78mapw2k3y8mnqmn47hxyz7svm4tm76wf8azmq")
+//         "obtain_token"
+//         Bucket("bucket1")
+//         Decimal("1")
+//         ;
+
+// CALL_METHOD
+//             Address("account_tdx_2_1285pq36tg53usvdhvwjlu40plmzf6dj8uyhrqxp6j0kvpl2znqtt54")
+//             "deposit_batch"
+//             Expression("ENTIRE_WORKTOP")
+//         ;
+
+//*create_propoosal
+// CALL_METHOD
+// Address("component_tdx_2_1czddjhay2jv0e03h78mapw2k3y8mnqmn47hxyz7svm4tm76wf8azmq")
+// "create_praposal"
+// "should we purchase laptop or not"
+// "abc"
+// 6u8
+// Tuple(
+// 2024u32 ,
+// 9u8 ,
+// 9u8 ,
+// 20u8 ,
+// 22u8 ,
+// 22u8)
+// Tuple(
+// 2024u32 ,
+// 9u8 ,
+// 12u8 ,
+// 1u8 ,
+// 1u8 ,
+// 1u8)
+// ;
+
+//*cast_a_vote
+
+// CALL_METHOD
+//             Address("account_tdx_2_1285pq36tg53usvdhvwjlu40plmzf6dj8uyhrqxp6j0kvpl2znqtt54")
+//             "withdraw"
+//             Address("resource_tdx_2_1thp48upl275dm4ar0675we2ew83fn04k3cg7ca57swlzumctk4xvgc") // community token
+//             Decimal("1")
+//         ;
+
+// TAKE_FROM_WORKTOP
+//             Address("resource_tdx_2_1thp48upl275dm4ar0675we2ew83fn04k3cg7ca57swlzumctk4xvgc")
+//             Decimal("1")
+//             Bucket("bucket2")
+//         ;
+
+// CALL_METHOD
+//         Address("component_tdx_2_1czddjhay2jv0e03h78mapw2k3y8mnqmn47hxyz7svm4tm76wf8azmq")
+//         "vote"
+//         Bucket("bucket2")
+//         true
+//         ;
+
+// CALL_METHOD
+//             Address("account_tdx_2_1285pq36tg53usvdhvwjlu40plmzf6dj8uyhrqxp6j0kvpl2znqtt54")
+//             "deposit_batch"
+//             Expression("ENTIRE_WORKTOP")
+//         ;
+
+// CALL_METHOD
+//             Address("component_tdx_2_1czddjhay2jv0e03h78mapw2k3y8mnqmn47hxyz7svm4tm76wf8azmq")
+//             "execute_proposal"
+//         ;
+
+//* vote is being casted multiple times 
+//* execute proposal and try to check proposal creation by an account other that community creator
+//* (I BELIEVE COMMUNITY CREATOR IS RESPONSIBLE FOR PROPOSAL CREATION) 
+
+//* QUESTIONS:
+//* CAN ANY COMMUNITY MEMBER CREATE A PROPOSAL ?    (OR ONLY COMMUNITY CREATOR WILL CREATE) 
+//* CAN ANY COMMUNITY MEMBER EXECUTE THE PROPOSAL ? (OR ONLY PROPOSAL CREATOR WILL EXECUTE)
+
+
+//*hustlepreet secondry account 
+// account_tdx_2_128e6fmjkhjqx0n8h9562rrvstl883wq22pzea4ucnnx0762ptlch4s

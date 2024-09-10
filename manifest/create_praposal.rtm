@@ -1,0 +1,27 @@
+CALL_METHOD
+    Address("account_tdx_2_1285pq36tg53usvdhvwjlu40plmzf6dj8uyhrqxp6j0kvpl2znqtt54")
+    "create_proof_of_amount"
+    Address("resource_tdx_2_1tkam4tmrj2xl4hry7gsvpx0sq56xljudckmxxhr72tehqj4mq3rzna")
+    Decimal("1")
+;
+
+CALL_METHOD
+Address("component_tdx_2_1czddjhay2jv0e03h78mapw2k3y8mnqmn47hxyz7svm4tm76wf8azmq")
+"create_praposal"
+"eat banana"
+1u8
+Tuple(
+2024u32 ,
+10u8 ,
+1u8 ,
+1u8 ,
+1u8 ,
+1u8)
+Tuple(
+2024u32 ,
+11u8 ,
+1u8 ,
+1u8 ,
+1u8 ,
+1u8)
+;

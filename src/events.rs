@@ -14,7 +14,10 @@ pub enum EventType {
 
     VOTE,
 
-    EXECUTE_PROPOSAL
+    EXECUTE_PROPOSAL,
+
+    BOND_ISSUANCE,  // New event type for bond issuance
+    BOND_PURCHASE,
 
 }
 
@@ -74,6 +77,22 @@ pub struct PraposalMetadata {
     pub owner_token_address: ResourceAddress,
     pub component_address: ComponentAddress, // votes:HashMap<Address,Decimal>
 }
+// ... (keep DaoType as is) ...
+
+#[derive(ScryptoSbor, Debug)]
+pub struct BondDetails {
+    pub price: Decimal,
+    pub maturity_date: u64,
+    pub bond_name: String,
+    pub bond_symbol: String,
+}
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct BondPurchase {
+    pub bond_address: ResourceAddress,
+    pub amount: Decimal,
+    pub price_paid: Decimal,
+}
 
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub enum DaoEvent {
@@ -86,7 +105,9 @@ pub enum DaoEvent {
 
     PraposalDeployment(PraposalMetadata),
 
-    PraposalVote(ProposalVote) 
+    PraposalVote(ProposalVote),
+
+    BondIssuance(BondDetails),
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]

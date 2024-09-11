@@ -4,6 +4,7 @@ use crate::events::*;
 mod proposal;
 use scrypto::prelude::*;
 
+
 #[blueprint]
 #[events(PandaoEvent, DaoEvent, TokenWightedDeployment, DaoType, EventType)]
 mod radixdao {
@@ -26,6 +27,10 @@ mod radixdao {
         token_price: Decimal,
 
         buy_back_price: Decimal,
+
+        bond_resource: Option<ResourceAddress>,
+        issued_bonds: Vault,
+        bond_proceeds: Vault,
     }
 
     impl TokenWeigtedDao {
@@ -118,6 +123,10 @@ mod radixdao {
                 buy_back_price: token_buy_back_price.clone(),
 
                 shares: Vault::new(XRD),
+
+                bond_resource: None,
+                issued_bonds: Vault::new(XRD), // Placeholder, will be set on first issuance
+                bond_proceeds: Vault::new(XRD),
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
@@ -173,6 +182,75 @@ mod radixdao {
 
         // TODO: OBTAIN A COMMUNITY TOKEN
 
+        fn validate_proof(&self, proof: Proof) {
+            // Check if the proof is fungible and associated with the correct resource address
+            let validated_proof = proof
+                .check(self.dao_token_address);
+        
+            // Convert the Proof to a FungibleProof to access the amount
+            let fungible_proof: CheckedFungibleProof = validated_proof.as_fungible();
+        
+            // Validate that the amount in the proof is at least 100
+            assert!(
+                fungible_proof.amount() >= dec!(100),
+                "Must hold at least 100 DAO tokens to issue bonds"
+            );
+        }
+        
+        pub fn issue_bonds(
+            &mut self,
+            bond_name: String,
+            bond_symbol: String,
+            number_of_bonds: Decimal,
+            bond_price: Decimal,
+            maturity_date: u64,
+            proof: Proof,
+        ) -> Bucket {
+            self.validate_proof(proof);
+
+            if self.bond_resource.is_none() {
+                // Create the bond resource
+                let bond_resource_address = ResourceBuilder::new_fungible(OwnerRole::None)
+                    .divisibility(DIVISIBILITY_NONE)
+                    .metadata(metadata!(
+                        init {
+                            "name" => bond_name.clone(), locked;
+                            "symbol" => bond_symbol.clone(), locked;
+                            "description" => format!("Bond issued by {}", self.organization_name), locked;
+                        }
+                    ))
+                    //todo!(Make changes to the roles here as required)
+                    .mint_roles(mint_roles!(
+                        minter => rule!(allow_all);
+                        minter_updater => rule!(deny_all);
+                    ))
+                    .create_with_no_initial_supply(); // Creates the resource and returns its address
+            
+                // how to get resource address from resource manager.
+                self.bond_resource = Some(bond_resource_address);
+                self.issued_bonds = Vault::new(bond_resource_address);
+            }
+
+            let bonds = self.issued_bonds.resource_manager().mint(number_of_bonds);
+
+            let bond_details = BondDetails {
+                price: bond_price,
+                maturity_date,
+                bond_name: bond_name.clone(),
+                bond_symbol: bond_symbol.clone(),
+            };
+
+            Runtime::emit_event(PandaoEvent {
+                event_type: EventType::BOND_ISSUANCE,
+                dao_type: DaoType::TokenWeight,
+                component_address: Runtime::global_address(),
+                meta_data: DaoEvent::BondIssuance(bond_details),
+            });
+
+            bonds
+        }
+
+        
         pub fn obtain_community_token(
             &mut self,
             mut xrd: Bucket,

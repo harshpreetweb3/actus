@@ -1,0 +1,21 @@
+CALL_METHOD
+Address("component_tdx_2_1czddjhay2jv0e03h78mapw2k3y8mnqmn47hxyz7svm4tm76wf8azmq")
+"create_praposal"
+"should we go to germany?"
+"abc"
+6u8
+Tuple(
+2024u32 ,
+9u8 ,
+9u8 ,
+20u8 ,
+22u8 ,
+22u8)
+Tuple(
+2024u32 ,
+9u8 ,
+12u8 ,
+1u8 ,
+1u8 ,
+1u8)
+;

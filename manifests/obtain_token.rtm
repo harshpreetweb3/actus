@@ -1,0 +1,25 @@
+ CALL_METHOD
+             Address("account_tdx_2_128e6fmjkhjqx0n8h9562rrvstl883wq22pzea4ucnnx0762ptlch4s")
+             "withdraw"
+             Address("resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc")
+             Decimal("5")
+         ;
+
+ TAKE_FROM_WORKTOP
+             Address("resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc")
+             Decimal("5")
+             Bucket("bucket1")
+         ;
+
+ CALL_METHOD
+         Address("component_tdx_2_1czddjhay2jv0e03h78mapw2k3y8mnqmn47hxyz7svm4tm76wf8azmq")
+         "obtain_token"
+         Bucket("bucket1")
+         Decimal("1")
+         ;
+
+ CALL_METHOD
+             Address("account_tdx_2_128e6fmjkhjqx0n8h9562rrvstl883wq22pzea4ucnnx0762ptlch4s")
+             "deposit_batch"
+             Expression("ENTIRE_WORKTOP")
+         ;

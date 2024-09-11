@@ -227,8 +227,8 @@ mod radixdao {
                     .create_with_no_initial_supply(); // Creates the resource and returns its address
             
                 // how to get resource address from resource manager.
-                self.bond_resource = Some(bond_resource_address);
-                self.issued_bonds = Vault::new(bond_resource_address);
+                self.bond_resource = Some(bond_resource_address.address());
+                self.issued_bonds = Vault::new(bond_resource_address.address());
             }
 
             let bonds = self.issued_bonds.resource_manager().mint(number_of_bonds);

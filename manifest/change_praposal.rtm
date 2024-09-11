@@ -1,0 +1,13 @@
+CALL_METHOD
+   # give account addresss
+    Address("account_tdx_2_128wx75khgz5rstma5aapejz3656eluz43v3jruz2s3kv3n0urr8m23")
+    "create_proof_of_amount"
+    # address of the resource
+    Address("resource_tdx_2_1t4ewu27ckvakw54rk9jdpg4yyqkxljrpaupyww7nd8x8khgfv90g7f")
+    Decimal("1")
+;
+CALL_METHOD
+Address("component_tdx_2_1cz7pzs6va8yg6hydc0f7swhz0mjzmp33fcvmeg590thxu6zpcsg29j")
+"change_praposal"
+"should i drink milk or juice?"
+;

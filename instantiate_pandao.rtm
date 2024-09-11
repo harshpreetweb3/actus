@@ -1,0 +1,24 @@
+CALL_METHOD
+    Address("component_sim1cptxxxxxxxxxfaucetxxxxxxxxx000527798379xxxxxxxxxhkrefh")
+    "lock_fee"
+    Decimal("5000")
+;
+CALL_FUNCTION
+    Address("package_tdx_2_1phtjjxh563e37wtp008re5zlpau7v7y8xudpy9mmw4cp22k56frszt")
+    "TokenWeigtedDao"
+    "initiate"
+    "Panjab Investment DAO"
+    100i32
+    0u8
+    Decimal("5")
+    Decimal("2")
+    "https://pbs.twimg.com/profile_images/1643159245389713408/47gnTbms_200x200.jpg"
+    "https://pbs.twimg.com/profile_images/1548373397289455616/OFhGnboY_400x400.jpg"
+    "This is a DAO for managing community projects"
+;
+CALL_METHOD
+    Address("account_tdx_2_1285pq36tg53usvdhvwjlu40plmzf6dj8uyhrqxp6j0kvpl2znqtt54")
+    "try_deposit_batch_or_refund"
+    Expression("ENTIRE_WORKTOP")
+    Enum<0u8>()
+;

@@ -67,19 +67,31 @@ mod pandao_praposal {
         }
 
         pub fn vote(&mut self, token: Bucket, against: bool) -> Bucket {
+
             assert_eq!(
                 token.resource_address(),
                 self.voter_badge_address,
                 "wrong voting token supplied"
             );
+
             let amount = token.amount();
+
             if against {
+                
                 self.voted_against += amount;
+
                 token
+
             } else {
+
                 self.voted_for += amount;
+
                 token
+
             }
+
+            
+
         }
 
     }

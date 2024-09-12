@@ -26,6 +26,8 @@ mod radixdao {
         token_price: Decimal,
 
         buy_back_price: Decimal,
+        // pub voted_addresses: HashSet<Address>
+        pub voted_addresses: HashSet<ComponentAddress>,
     }
 
     impl TokenWeigtedDao {
@@ -118,6 +120,8 @@ mod radixdao {
                 buy_back_price: token_buy_back_price.clone(),
 
                 shares: Vault::new(XRD),
+                // voters: HashMap::new()
+                voted_addresses: HashSet::new(),
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
@@ -218,7 +222,6 @@ mod radixdao {
         }
 
         pub fn withdraw_power(&mut self, voting_power: Bucket) -> Bucket {
-
             // put the voting power back
             assert!(
                 self.current_praposal.is_none(),
@@ -230,15 +233,13 @@ mod radixdao {
             self.dao_token.put(voting_power);
 
             let event_metadata = TokenWeightBuyToken {
-
                 amount: power_amount,
 
                 resource_address: self.dao_token_address.clone(),
 
                 amount_paid: power_amount * self.buy_back_price,
 
-                current_component_share: self.shares.amount()
-
+                current_component_share: self.shares.amount(),
             };
 
             let component_address = Runtime::global_address();
@@ -251,7 +252,6 @@ mod radixdao {
             });
 
             self.shares.take(power_amount * self.buy_back_price)
-
         }
 
         pub fn create_praposal(
@@ -259,10 +259,9 @@ mod radixdao {
             title: String,
             description: String,
             minimun_quorum: u8,
-            start_time: scrypto::time::UtcDateTime,     
+            start_time: scrypto::time::UtcDateTime,
             end_time: scrypto::time::UtcDateTime,
         ) -> Global<crate::proposal::pandao_praposal::TokenWeightProposal> {
-
             use crate::proposal::pandao_praposal::TokenWeightProposal;
 
             assert!(
@@ -325,21 +324,67 @@ mod radixdao {
             }
         }
 
-        
+        //TODO: vote fn
+
+        pub fn vote(&mut self, token: Bucket, against: bool, account: Global<Account>) -> Bucket {
+            if let Some(proposal) = self.current_praposal {
+                assert_eq!(
+                    token.resource_address(),
+                    self.dao_token_address,
+                    "wrong voting token supplied"
+                );
+
+                // Get the voter address from the account
+                let voter_address = account.address();
+
+                // Check if the voter has already voted
+                assert!(
+                    !self.voted_addresses.contains(&voter_address),
+                    "You have already voted on this proposal."
+                );
+
+                let amount = token.amount();
+
+                let event_metadata = ProposalVote {
+                    praposal_address: proposal.address(),
+                    voting_amount: amount,
+                    againts: against,
+                };
+
+                Runtime::emit_event(PandaoEvent {
+                    event_type: EventType::VOTE,
+                    dao_type: DaoType::TokenWeight,
+                    component_address: Runtime::global_address(),
+                    meta_data: DaoEvent::PraposalVote(event_metadata),
+                });
+
+                let result = proposal.vote(token, against);
+ 
+                // Mark this voter as having voted
+                self.voted_addresses.insert(voter_address);
+
+                result
+
+            } else {
+                assert!(false, "no active proposal");
+                panic!();
+            }
+        }
     }
 }
 
 //*initialize
 // resim call-function package_sim1p4nk9h5kw2mcmwn5u2xcmlmwap8j6dzet7w7zztzz55p70rgqs4vag TokenWeigtedDao initiate "Panjab Investment DAO" 100 0 5 2 "https://pbs.twimg.com/profile_images/1643159245389713408/47gnTbms_200x200.jpg" "https://pbs.twimg.com/profile_images/1548373397289455616/OFhGnboY_400x400.jpg" "This is a DAO for managing community projects"
-// resim call-function package_sim1p4nk9h5kw2mcmwn5u2xcmlmwap8j6dzet7w7zztzz55p70rgqs4vag TokenWeigtedDao initiate "Panjab Investment DAO" 100 0 5 2 "https://pbs.twimg.com/profile_images/1643159245389713408/47gnTbms_200x200.jpg" "https://pbs.twimg.com/profile_images/1548373397289455616/OFhGnboY_400x400.jpg" "This is a DAO for managing community projects" --manifest instantiate_pandao.rtm
+// resim call-function package_sim1pk3cmat8st4ja2ms8mjqy2e9ptk8y6cx40v4qnfrkgnxcp2krkpr92 TokenWeigtedDao initiate "Panjab Investment DAO" 100 0 5 2 "https://pbs.twimg.com/profile_images/1643159245389713408/47gnTbms_200x200.jpg" "https://pbs.twimg.com/profile_images/1548373397289455616/OFhGnboY_400x400.jpg" "This is a DAO for managing community projects" --manifest instantiate_pandao.rtm
 
 // account_sim1c956qr3kxlgypxwst89j9yf24tjc7zxd4up38x37zr6q4jxdx9rhma
 // component_sim1czwnyl3pfn955s45a2js64w8zjlptwz4y3w4wwwl944rk2l2ceapsc
+//
 
 //*obtain_token
 // resim call-method component_sim1czwnyl3pfn955s45a2js64w8zjlptwz4y3w4wwwl944rk2l2ceapsc obtain_token resource_sim1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxakj8n3:5 1
 // resim call-method component_sim1cpwu4wc6rg0am8l9prnh2lzqkk6hue6stzqhdx48rzvek2mmm5vp0p obtain_token resource_sim1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxakj8n3:5 1
-    
+
 // create_proposal
 // resim call-method component_sim1czwnyl3pfn955s45a2js64w8zjlptwz4y3w4wwwl944rk2l2ceapsc create_praposal "Panda Fridays" "Introduce a fun Panda-themed event every Friday." 10 1694774400 1695052800
 // resim call-method 02012345 create_praposal "Panda Fridays" "Introduce a fun Panda-themed event every Friday." 10 1694774400 1695052800
@@ -356,7 +401,6 @@ mod radixdao {
 
 //*community native token
 //resource_tdx_2_1thp48upl275dm4ar0675we2ew83fn04k3cg7ca57swlzumctk4xvgc
-
 
 //*manifest to call obtain_token*/
 // CALL_METHOD
@@ -441,22 +485,18 @@ mod radixdao {
 //             "execute_proposal"
 //         ;
 
-//* vote is being casted multiple times 
+//* vote is being casted multiple times
 //* execute proposal and try to check proposal creation by an account other that community creator
-//* (I BELIEVE COMMUNITY CREATOR IS RESPONSIBLE FOR PROPOSAL CREATION) 
+//* (I BELIEVE COMMUNITY CREATOR IS RESPONSIBLE FOR PROPOSAL CREATION)
 
 //* TEST-CASES:
 //* CAN ANY COMMUNITY MEMBER CREATE A PROPOSAL ?    (OR ONLY COMMUNITY CREATOR WILL CREATE)
-//  yes! any member can create a proposal 
+//  yes! any member can create a proposal
 
 //* CAN ANY COMMUNITY MEMBER EXECUTE THE PROPOSAL ? (OR ONLY PROPOSAL CREATOR WILL EXECUTE)
-//* DO WE REALLY NEED TO HAVE A COMMUNITY TOKEN FOR PROPOSAL CREATION?*/ 
-
-//*hustlepreet secondry account 
+//* DO WE REALLY NEED TO HAVE A COMMUNITY TOKEN FOR PROPOSAL CREATION?*/
+//*hustlepreet secondry account
 // account_tdx_2_128e6fmjkhjqx0n8h9562rrvstl883wq22pzea4ucnnx0762ptlch4s
 
 //*missing functions
 // become_a_dao_member
-
-
-

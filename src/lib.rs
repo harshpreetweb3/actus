@@ -4,11 +4,21 @@ use crate::events::*;
 mod proposal;
 use scrypto::prelude::*;
 
+mod zerocouponbond;
+
 #[blueprint]
 #[events(PandaoEvent, DaoEvent, TokenWightedDeployment, DaoType, EventType)]
 mod radixdao {
 
-    use proposal::pandao_praposal::TokenWeightProposal;
+    use super::*;
+    use 
+    proposal::pandao_praposal::TokenWeightProposal;
+
+    // Use the ZeroCouponBond from the zerocouponbond module
+    use crate::zerocouponbond::zerocouponbond::ZeroCouponBond;
+
+    use crate::zerocouponbond::BondDetails;
+
 
     pub struct TokenWeigtedDao {
         current_praposal: Option<Global<TokenWeightProposal>>,
@@ -28,6 +38,9 @@ mod radixdao {
         buy_back_price: Decimal,
         // pub voted_addresses: HashSet<Address>
         pub voted_addresses: HashSet<ComponentAddress>,
+
+        // Add ZeroCouponBond component
+        zero_coupon_bond: Option<Global<ZeroCouponBond>>,
     }
 
     impl TokenWeigtedDao {
@@ -122,6 +135,10 @@ mod radixdao {
                 shares: Vault::new(XRD),
                 // voters: HashMap::new()
                 voted_addresses: HashSet::new(),
+
+                // Initialize zero_coupon_bond as None
+                zero_coupon_bond: None,
+
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
@@ -174,6 +191,67 @@ mod radixdao {
 
             (component, owner_badge)
         }
+
+        pub fn create_zero_coupon_bond(
+            &mut self,
+            contract_type: String,
+            contract_role: String,
+            contract_identifier: String,
+            nominal_interest_rate: Decimal,
+            currency: String,
+            initial_exchange_date: u64,
+            maturity_date: u64,
+            notional_principal: Decimal,
+            discount: u64,
+            bond_position: String,
+            price: Decimal,
+            number_of_bonds: Decimal,
+        ) -> Global<ZeroCouponBond> {
+            assert!(self.zero_coupon_bond.is_none(), "ZeroCouponBond already exists");
+            let bond_component = ZeroCouponBond::instantiate_zerocouponbond(
+                contract_type,
+                contract_role,
+                contract_identifier,
+                nominal_interest_rate,
+                currency,
+                initial_exchange_date,
+                maturity_date,
+                notional_principal,
+                discount,
+                bond_position,
+                price,
+                number_of_bonds,
+            );
+            self.zero_coupon_bond = Some(bond_component);
+            bond_component
+        }
+
+        // New method to purchase a bond
+        pub fn purchase_bond(&mut self, payment: Bucket) -> (Bucket, Bucket) {
+            assert!(self.zero_coupon_bond.is_some(), "ZeroCouponBond not initialized");
+            self.zero_coupon_bond.as_mut().unwrap().purchase_bond(payment)
+        }
+
+        // New method to sell a bond
+        pub fn sell_bond(&mut self, bond: Bucket) -> Bucket {
+            assert!(self.zero_coupon_bond.is_some(), "ZeroCouponBond not initialized");
+            self.zero_coupon_bond.as_mut().unwrap().sell_the_bond(bond)
+        }
+
+        // New method to check bond maturity
+        pub fn check_bond_maturity(&self) -> i64 {
+            assert!(self.zero_coupon_bond.is_some(), "ZeroCouponBond not initialized");
+            self.zero_coupon_bond.as_ref().unwrap().check_the_maturity_of_bonds()
+        }
+
+        // New method to get bond details
+        pub fn get_bond_details(&self) -> BondDetails {
+            assert!(self.zero_coupon_bond.is_some(), "ZeroCouponBond not initialized");
+            self.zero_coupon_bond.as_ref().unwrap().get_bond_details()
+        }
+        
+
+
 
         // TODO: OBTAIN A COMMUNITY TOKEN
 

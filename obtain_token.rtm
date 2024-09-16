@@ -4,24 +4,24 @@ CALL_METHOD
     Decimal("5000")
 ;
 CALL_METHOD
-    Address("account_sim1c956qr3kxlgypxwst89j9yf24tjc7zxd4up38x37zr6q4jxdx9rhma")
+    Address("account_tdx_2_12xt5gudq8x6dgy06aj6y8sfa8c3rpr4dgsdaesuuq2cq7q3fgy32wc")
     "withdraw"
-    Address("resource_sim1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxakj8n3")
+    Address("resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc")
     Decimal("5")
 ;
 TAKE_FROM_WORKTOP
-    Address("resource_sim1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxakj8n3")
+    Address("resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc")
     Decimal("5")
     Bucket("bucket1")
 ;
 CALL_METHOD
-    Address("component_sim1czwnyl3pfn955s45a2js64w8zjlptwz4y3w4wwwl944rk2l2ceapsc")
+    Address("component_tdx_2_1cz78mdd49nuypcft4rf288nvwqc4xzfze9ktvj7rztkze8q3qnzp9n")
     "obtain_token"
     Bucket("bucket1")
     Decimal("1")
 ;
 CALL_METHOD
-    Address("account_sim1c956qr3kxlgypxwst89j9yf24tjc7zxd4up38x37zr6q4jxdx9rhma")
+    Address("account_tdx_2_12xt5gudq8x6dgy06aj6y8sfa8c3rpr4dgsdaesuuq2cq7q3fgy32wc")
     "try_deposit_batch_or_refund"
     Expression("ENTIRE_WORKTOP")
     Enum<0u8>()

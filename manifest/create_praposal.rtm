@@ -1,12 +1,12 @@
 CALL_METHOD
-    Address("account_tdx_2_1285pq36tg53usvdhvwjlu40plmzf6dj8uyhrqxp6j0kvpl2znqtt54")
+    Address("account_tdx_2_12xt5gudq8x6dgy06aj6y8sfa8c3rpr4dgsdaesuuq2cq7q3fgy32wc")
     "create_proof_of_amount"
-    Address("resource_tdx_2_1tkam4tmrj2xl4hry7gsvpx0sq56xljudckmxxhr72tehqj4mq3rzna")
+    Address("resource_tdx_2_1t4nmn3cp7vsvu4hfpl72twcdhzwl69w5vfr29r46sd5s4qtn59kc2h")
     Decimal("1")
 ;
 
 CALL_METHOD
-Address("component_tdx_2_1czddjhay2jv0e03h78mapw2k3y8mnqmn47hxyz7svm4tm76wf8azmq")
+Address("component_tdx_2_1cz78mdd49nuypcft4rf288nvwqc4xzfze9ktvj7rztkze8q3qnzp9n")
 "create_praposal"
 "eat banana"
 1u8

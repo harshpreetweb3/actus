@@ -70,7 +70,7 @@ mod zerocouponbond {
                         "symbol" => "ZCB", locked;
                         "description" => "A Zero Coupon Bond", locked;
                     }
-                ))
+                ))  
                 .mint_initial_supply(number_of_bonds)
                 .into();
 
@@ -213,3 +213,11 @@ mod zerocouponbond {
 
 // there would be function to check how many bonds are remaining in the contract
 // contract owner will mint more bonds if wants to increase up the no_of_zero_coupon_bonds
+
+
+//*new
+// component_sim1cr9ep7596uvmt45kmxczrkxf8a5vevsnl5xw42heven9qkkg5xukme
+
+// resource_sim1tklvuzvc60lvdc2dmrszpa20n2tu3vw839x97gtq6ezvx2qu04k5yz: 100 ZeroCouponBond (ZCB)
+
+// Blueprint ID: { package_address: package_sim1pk3cmat8st4ja2ms8mjqy2e9ptk8y6cx40v4qnfrkgnxcp2krkpr92, blueprint_name: "ZeroCouponBond" }

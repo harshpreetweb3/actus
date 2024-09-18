@@ -13,9 +13,9 @@ mod radixdao {
     use super::*;
     use 
     proposal::pandao_praposal::TokenWeightProposal;
+    use zerocouponbond::zerocouponbond::ZeroCouponBond;
 
     // Use the ZeroCouponBond from the zerocouponbond module
-    use crate::zerocouponbond::zerocouponbond::ZeroCouponBond;
 
     use crate::zerocouponbond::BondDetails;
 
@@ -40,8 +40,13 @@ mod radixdao {
         pub voted_addresses: HashSet<ComponentAddress>,
 
         // Add ZeroCouponBond component
-        zero_coupon_bond: Option<Global<ZeroCouponBond>>,
+        //zero_coupon_bond: Option<Global<ZeroCouponBond>>,
+
+        zero_coupon_bond : HashMap<ComponentAddress, Vec<Global<ZeroCouponBond>>>
+
     }
+
+    
 
     impl TokenWeigtedDao {
         pub fn initiate(
@@ -137,7 +142,7 @@ mod radixdao {
                 voted_addresses: HashSet::new(),
 
                 // Initialize zero_coupon_bond as None
-                zero_coupon_bond: None,
+                zero_coupon_bond: HashMap::new(),
 
             }
             .instantiate()
@@ -192,63 +197,7 @@ mod radixdao {
             (component, owner_badge)
         }
 
-        pub fn create_zero_coupon_bond(
-            &mut self,
-            contract_type: String,
-            contract_role: String,
-            contract_identifier: String,
-            nominal_interest_rate: Decimal,
-            currency: String,
-            initial_exchange_date: u64,
-            maturity_date: u64,
-            notional_principal: Decimal,
-            discount: u64,
-            bond_position: String,
-            price: Decimal,
-            number_of_bonds: Decimal,
-        ) -> Global<ZeroCouponBond> {
-            assert!(self.zero_coupon_bond.is_none(), "ZeroCouponBond already exists");
-            let bond_component = ZeroCouponBond::instantiate_zerocouponbond(
-                contract_type,
-                contract_role,
-                contract_identifier,
-                nominal_interest_rate,
-                currency,
-                initial_exchange_date,
-                maturity_date,
-                notional_principal,
-                discount,
-                bond_position,
-                price,
-                number_of_bonds,
-            );
-            self.zero_coupon_bond = Some(bond_component);
-            bond_component
-        }
-
-        // New method to purchase a bond
-        pub fn purchase_bond(&mut self, payment: Bucket) -> (Bucket, Bucket) {
-            assert!(self.zero_coupon_bond.is_some(), "ZeroCouponBond not initialized");
-            self.zero_coupon_bond.as_mut().unwrap().purchase_bond(payment)
-        }
-
-        // New method to sell a bond
-        pub fn sell_bond(&mut self, bond: Bucket) -> Bucket {
-            assert!(self.zero_coupon_bond.is_some(), "ZeroCouponBond not initialized");
-            self.zero_coupon_bond.as_mut().unwrap().sell_the_bond(bond)
-        }
-
-        // New method to check bond maturity
-        pub fn check_bond_maturity(&self) -> i64 {
-            assert!(self.zero_coupon_bond.is_some(), "ZeroCouponBond not initialized");
-            self.zero_coupon_bond.as_ref().unwrap().check_the_maturity_of_bonds()
-        }
-
-        // New method to get bond details
-        pub fn get_bond_details(&self) -> BondDetails {
-            assert!(self.zero_coupon_bond.is_some(), "ZeroCouponBond not initialized");
-            self.zero_coupon_bond.as_ref().unwrap().get_bond_details()
-        }
+        
         
 
 
@@ -448,6 +397,128 @@ mod radixdao {
                 panic!();
             }
         }
+
+        pub fn create_zero_coupon_bond(
+            &mut self,
+            contract_type: String,
+            contract_role: String,
+            contract_identifier: String,
+            nominal_interest_rate: Decimal,
+            currency: String,
+            initial_exchange_date: u64,
+            maturity_date: u64,
+            notional_principal: Decimal,
+            discount: u64,
+            bond_position: String,
+            price: Decimal,
+            number_of_bonds: Decimal,
+            your_address : ComponentAddress
+        ) -> Global<ZeroCouponBond> {
+
+            // assert!(self.zero_coupon_bond.is_none(), "ZeroCouponBond already exists");
+
+            let bond_component = ZeroCouponBond::instantiate_zerocouponbond(
+                contract_type,
+                contract_role,
+                contract_identifier,
+                nominal_interest_rate,
+                currency,
+                initial_exchange_date,
+                maturity_date,
+                notional_principal,
+                discount,
+                bond_position,
+                price,
+                number_of_bonds,
+            );
+
+            self.zero_coupon_bond.entry(your_address).or_insert_with(Vec::new).push(bond_component);
+            // self.zero_coupon_bond = Some(bond_component);
+
+            bond_component
+        }
+
+        // New method to purchase a bond
+        // pub fn purchase_bond(&mut self, payment: Bucket) -> (Bucket, Bucket) {
+
+        //     assert!(self.zero_coupon_bond.is_some(), "ZeroCouponBond not initialized");
+
+        //     self.zero_coupon_bond.as_mut().unwrap().purchase_bond(payment)
+        // }
+
+        pub fn purchase_bond(
+            &mut self,
+            bond_creator_address: ComponentAddress,
+            payment: Bucket
+        ) -> (Bucket, Bucket) {
+            assert!(
+                self.zero_coupon_bond.contains_key(&bond_creator_address),
+                "No bonds created by the specified address."
+            );
+
+            // Retrieve the most recent bond component created by the bond creator
+            let bond_components = self.zero_coupon_bond.get_mut(&bond_creator_address).unwrap();
+
+            //*we can restrict a creator in terms of bond creation 
+            let latest_bond_component = bond_components.last_mut().expect("No bond component found");
+
+            // Purchase bond from the latest bond component
+            latest_bond_component.purchase_bond(payment)
+        }
+
+        // New method to sell a bond
+        pub fn sell_bond(
+            &mut self,
+            bond_creator_address: ComponentAddress,
+            bond: Bucket
+        ) -> Bucket {
+            assert!(
+                self.zero_coupon_bond.contains_key(&bond_creator_address),
+                "No bonds created by the specified address."
+            );
+
+            // Retrieve the most recent bond component created by the bond creator
+            let bond_components = self.zero_coupon_bond.get_mut(&bond_creator_address).unwrap();
+            let latest_bond_component = bond_components.last_mut().expect("No bond component found");
+
+            // Sell bond from the latest bond component
+            latest_bond_component.sell_the_bond(bond)
+        }
+
+        // New method to check bond maturity
+        pub fn check_bond_maturity(&self, bond_creator_address: ComponentAddress) -> i64 {
+            assert!(
+                self.zero_coupon_bond.contains_key(&bond_creator_address),
+                "No bonds created by the specified address."
+            );
+
+            // Retrieve the most recent bond component created by the bond creator
+            let bond_components = self.zero_coupon_bond.get(&bond_creator_address).unwrap();
+            let latest_bond_component = bond_components.last().expect("No bond component found");
+
+            // Check bond maturity of the latest bond component
+            latest_bond_component.check_the_maturity_of_bonds()
+        }
+
+        // New method to get bond details
+        pub fn get_bond_details(&self, bond_creator_address: ComponentAddress) -> BondDetails {
+            assert!(
+                self.zero_coupon_bond.contains_key(&bond_creator_address),
+                "No bonds created by the specified address."
+            );
+
+            // Retrieve the most recent bond component created by the bond creator
+            let bond_components = self.zero_coupon_bond.get(&bond_creator_address).unwrap();
+            let latest_bond_component = bond_components.last().expect("No bond component found");
+
+            // Get bond details of the latest bond component
+            latest_bond_component.get_bond_details()
+        }
+
+        // Function to retrieve bond creators and their bond component addresses
+        pub fn get_bond_creators(&self) -> HashMap<ComponentAddress, Vec<Global<ZeroCouponBond>>> {
+            self.zero_coupon_bond.clone()  // Return the HashMap of bond creators and their bonds
+        }
     }
 }
 
@@ -461,7 +532,23 @@ mod radixdao {
 
 //*obtain_token
 // resim call-method component_sim1czwnyl3pfn955s45a2js64w8zjlptwz4y3w4wwwl944rk2l2ceapsc obtain_token resource_sim1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxakj8n3:5 1
-// resim call-method component_sim1cpwu4wc6rg0am8l9prnh2lzqkk6hue6stzqhdx48rzvek2mmm5vp0p obtain_token resource_sim1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxakj8n3:5 1
+// resim call-method component_sim1cpwu4wc6rg0am8l9prnh2lzqkk6hue6stzqhdx48rzvek2mmm5vp0p obtain_community_token resource_sim1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxakj8n3:5 1
+
+//*create_zero_coupon_bonds
+// resim call-method component_sim1cpwu4wc6rg0am8l9prnh2lzqkk6hue6stzqhdx48rzvek2mmm5vp0p create_zero_coupon_bond "Corporate Bond" "Issuer" "Contract ID 123" 0.05 "USD" 1694774400 1695052800 1000000 5 "Secondary Market" 105 100
+
+//*purchase_a_bond
+// resim call-method component_sim1cpwu4wc6rg0am8l9prnh2lzqkk6hue6stzqhdx48rzvek2mmm5vp0p purchase_bond resource_sim1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxakj8n3:105
+
+//*sell_a_bond
+// resim call-method component_sim1cpwu4wc6rg0am8l9prnh2lzqkk6hue6stzqhdx48rzvek2mmm5vp0p sell_bond resource_sim1tklvuzvc60lvdc2dmrszpa20n2tu3vw839x97gtq6ezvx2qu04k5yz:1
+
+//*check_bond_maturity
+// resim call-method component_sim1cpwu4wc6rg0am8l9prnh2lzqkk6hue6stzqhdx48rzvek2mmm5vp0p check_bond_maturity
+
+//*get_bond_details
+// resim call-method component_sim1cpwu4wc6rg0am8l9prnh2lzqkk6hue6stzqhdx48rzvek2mmm5vp0p get_bond_details
+
 
 // create_proposal
 // resim call-method component_sim1czwnyl3pfn955s45a2js64w8zjlptwz4y3w4wwwl944rk2l2ceapsc create_praposal "Panda Fridays" "Introduce a fun Panda-themed event every Friday." 10 1694774400 1695052800

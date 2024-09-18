@@ -415,7 +415,12 @@ mod radixdao {
             your_address : ComponentAddress
         ) -> Global<ZeroCouponBond> {
 
-            // assert!(self.zero_coupon_bond.is_none(), "ZeroCouponBond already exists");
+
+            // Ensure the address has not created any bonds already
+            assert!(
+                !self.zero_coupon_bond.contains_key(&your_address),
+                "This address has already created a bond and cannot create another."
+            );
 
             let bond_component = ZeroCouponBond::instantiate_zerocouponbond(
                 contract_type,

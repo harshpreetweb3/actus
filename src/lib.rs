@@ -456,6 +456,7 @@ mod radixdao {
             bond_creator_address: ComponentAddress,
             payment: Bucket
         ) -> (Bucket, Bucket) {
+
             assert!(
                 self.zero_coupon_bond.contains_key(&bond_creator_address),
                 "No bonds created by the specified address."
@@ -524,6 +525,30 @@ mod radixdao {
         pub fn get_bond_creators(&self) -> HashMap<ComponentAddress, Vec<Global<ZeroCouponBond>>> {
             self.zero_coupon_bond.clone()  // Return the HashMap of bond creators and their bonds
         }
+
+        // New function to get all bond creator addresses
+        pub fn get_bond_creator_addresses(&self) -> Vec<ComponentAddress> {
+            self.zero_coupon_bond.keys().cloned().collect()  // Return a list of bond creator addresses
+        }
+
+        // Function to get bond creator address and bond details
+        pub fn get_bond_creator_and_details(&self) -> Vec<(ComponentAddress, Vec<BondDetails>)> {
+            let mut result = Vec::new();
+
+            // Iterate through each bond creator address and their bond components
+            for (creator_address, bonds) in &self.zero_coupon_bond {
+                let mut bond_details = Vec::new();
+                for bond in bonds {
+                    bond_details.push(bond.get_bond_details());
+                }
+                // Push the creator address and corresponding bond details to the result
+                result.push((*creator_address, bond_details));
+            }
+
+            result
+        }
+
+
     }
 }
 

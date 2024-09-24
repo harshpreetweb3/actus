@@ -14,7 +14,9 @@ pub enum EventType {
 
     VOTE,
 
-    EXECUTE_PROPOSAL
+    EXECUTE_PROPOSAL,
+
+    TREASURY_CONTRIBUTION,
 
 }
 
@@ -86,7 +88,9 @@ pub enum DaoEvent {
 
     PraposalDeployment(PraposalMetadata),
 
-    PraposalVote(ProposalVote) 
+    PraposalVote(ProposalVote),
+
+    TreasuryContribution(TreasuryContribution), 
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
@@ -120,4 +124,11 @@ pub struct BoughtToken {
     pub component_address: ComponentAddress,
     pub user_address: ResourceAddress,
     pub amount: Decimal,
+}
+
+#[derive(ScryptoSbor, Debug)]
+pub struct TreasuryContribution {
+    pub contributor: ComponentAddress,
+    pub amount: Decimal,
+    pub timestamp: u64,
 }

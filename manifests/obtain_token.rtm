@@ -2,20 +2,20 @@
              Address("account_tdx_2_128e6fmjkhjqx0n8h9562rrvstl883wq22pzea4ucnnx0762ptlch4s")
              "withdraw"
              Address("resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc")
-             Decimal("5")
+             Decimal("10")
          ;
 
  TAKE_FROM_WORKTOP
              Address("resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc")
-             Decimal("5")
+             Decimal("10")
              Bucket("bucket1")
          ;
 
  CALL_METHOD
-         Address("component_tdx_2_1czddjhay2jv0e03h78mapw2k3y8mnqmn47hxyz7svm4tm76wf8azmq")
-         "obtain_token"
+         Address("component_tdx_2_1czhkfa8qwdvypzmwr77z78sgrdfyvp5a6xhdkltcmlzh5pzunjef7p")
+         "obtain_community_token"
          Bucket("bucket1")
-         Decimal("1")
+         Decimal("2")
          ;
 
  CALL_METHOD

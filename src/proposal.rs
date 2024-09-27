@@ -2,6 +2,8 @@ use scrypto::prelude::*;
 
 #[blueprint]
 mod pandao_praposal {
+    use std::path::Component;
+
     pub struct TokenWeightProposal {
         /// A simple string representing the current proposal.
         pub title: String,
@@ -32,6 +34,12 @@ mod pandao_praposal {
     
         // A mapping of addresses to their respective vote weights.
         // pub votes: HashMap<Address, Decimal>,
+
+        pub address_issued_bonds_to_sell : ComponentAddress,
+
+        pub target_xrd_amount: Decimal,
+
+        pub vote_caster_addresses : HashSet<ComponentAddress>
     }
 
     impl TokenWeightProposal  {
@@ -44,19 +52,28 @@ mod pandao_praposal {
             end_time: scrypto::time::UtcDateTime,
             owner_badge_address: ResourceAddress,
             voter_badge_address: ResourceAddress,
+
+            address_issued_bonds_to_sell : ComponentAddress  ,
+
+            target_xrd_amount : Decimal
+
         ) -> (Global<TokenWeightProposal >, GlobalAddressReservation) {
             let (address_reservation, _) =
                 Runtime::allocate_component_address(TokenWeightProposal ::blueprint_id());
 
             let proposal = TokenWeightProposal {
-                title:title,
-                description:description,
+                title,
+                description,
                 voted_for:0.into(),
                 voted_against:0.into(),
                 minimum_quorum:minimun_quorum.into(),
-                end_time:end_time,start_time:start_time,
+                end_time,
+                start_time,
                 owner_token_address:owner_badge_address,
-                voter_badge_address:voter_badge_address,
+                voter_badge_address,
+                address_issued_bonds_to_sell,
+                target_xrd_amount,
+                vote_caster_addresses : HashSet::new()
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::None)
@@ -92,6 +109,18 @@ mod pandao_praposal {
 
             
 
+        }
+
+        pub fn get_address_issued_bonds(&self) -> ComponentAddress {
+            self.address_issued_bonds_to_sell
+        }
+
+        pub fn get_target_xrd_amount(&self) -> Decimal {
+            self.target_xrd_amount
+        }
+
+        pub fn get_vote_caster_addresses(&self) -> HashSet<ComponentAddress> {
+            self.vote_caster_addresses.clone()
         }
 
     }

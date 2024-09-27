@@ -73,6 +73,8 @@ pub struct PraposalMetadata {
     pub start_time_ts: i64,
     pub owner_token_address: ResourceAddress,
     pub component_address: ComponentAddress, // votes:HashMap<Address,Decimal>
+    pub address_issued_bonds_to_sell : ComponentAddress,
+    pub target_xrd_amount : Decimal
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
@@ -92,13 +94,16 @@ pub enum DaoEvent {
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub struct PraposalExecute{
     pub praposal_address : ComponentAddress ,
+    pub purchased_bond_address : ResourceAddress,
+    pub purchased_amount : Decimal
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub struct ProposalVote{
-    pub praposal_address : ComponentAddress ,
-    pub voting_amount : Decimal ,
-    pub againts:bool
+    pub praposal_address : ComponentAddress,
+    pub voting_amount : Decimal,
+    pub againts: bool,
+    pub voter_address : ComponentAddress
 }
 
 // create an event for community_creation

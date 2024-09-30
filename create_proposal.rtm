@@ -1,27 +1,4 @@
 CALL_METHOD
-Address("component_tdx_2_1czddjhay2jv0e03h78mapw2k3y8mnqmn47hxyz7svm4tm76wf8azmq")
-"create_praposal"
-"should we go to germany?"
-"abc"
-6u8
-Tuple(
-2024u32 ,
-9u8 ,
-9u8 ,
-20u8 ,
-22u8 ,
-22u8)
-Tuple(
-2024u32 ,
-9u8 ,
-12u8 ,
-1u8 ,
-1u8 ,
-1u8)
-;
-
-
-CALL_METHOD
 Address("component_tdx_2_1cpp30nrxvy2hmjws56neftyt63a39pqnq435fejfa5j7v6y7e5xn42")
 "create_praposal"
 "Token Price"
@@ -41,8 +18,6 @@ Tuple(
 1u8 ,
 1u8 ,
 1u8)
-Address("account_tdx_2_128e6fmjkhjqx0n8h9562rrvstl883wq22pzea4ucnnx0762ptlch4s")
-Decimal("40")
 Enum<1u8>(
 Address("account_tdx_2_128e6fmjkhjqx0n8h9562rrvstl883wq22pzea4ucnnx0762ptlch4s")
 )
@@ -50,3 +25,16 @@ Enum<1u8>(
 Decimal("40")
 )
 ;
+
+
+
+
+
+
+
+
+
+
+
+
+

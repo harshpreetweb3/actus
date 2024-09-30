@@ -514,7 +514,7 @@ mod radixdao {
         pub fn purchase_bond(
             &mut self,
             bond_creator_address: ComponentAddress,
-            payment: Bucket,
+            payment: Bucket
         ) -> (Bucket, Bucket){
 
             assert!(

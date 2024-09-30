@@ -35,9 +35,8 @@ mod pandao_praposal {
         // A mapping of addresses to their respective vote weights.
         // pub votes: HashMap<Address, Decimal>,
 
-        pub address_issued_bonds_to_sell : ComponentAddress,
-
-        pub target_xrd_amount: Decimal,
+        pub address_issued_bonds_to_sell : Option<ComponentAddress>,
+        pub target_xrd_amount: Option<Decimal>,
 
         pub vote_caster_addresses : HashSet<ComponentAddress>
     }
@@ -52,11 +51,8 @@ mod pandao_praposal {
             end_time: scrypto::time::UtcDateTime,
             owner_badge_address: ResourceAddress,
             voter_badge_address: ResourceAddress,
-
-            address_issued_bonds_to_sell : ComponentAddress  ,
-
-            target_xrd_amount : Decimal
-
+            address_issued_bonds_to_sell : Option<ComponentAddress>,
+            target_xrd_amount : Option<Decimal>
         ) -> (Global<TokenWeightProposal >, GlobalAddressReservation) {
             let (address_reservation, _) =
                 Runtime::allocate_component_address(TokenWeightProposal ::blueprint_id());
@@ -106,17 +102,24 @@ mod pandao_praposal {
                 token
 
             }
-
-            
-
         }
 
         pub fn get_address_issued_bonds(&self) -> ComponentAddress {
-            self.address_issued_bonds_to_sell
+
+            if let Some(address_issued_bonds_to_sell) =self.address_issued_bonds_to_sell{
+                address_issued_bonds_to_sell
+            }else{
+                panic!("address issued bonds to sell is None")
+            }
         }
 
         pub fn get_target_xrd_amount(&self) -> Decimal {
-            self.target_xrd_amount
+
+            if let Some(target_xrd_amount) =self.target_xrd_amount{
+                target_xrd_amount
+            }else{
+                panic!("target xrd amount is None")
+            }
         }
 
         pub fn get_vote_caster_addresses(&self) -> HashSet<ComponentAddress> {

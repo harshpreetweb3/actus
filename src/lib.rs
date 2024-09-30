@@ -28,7 +28,7 @@ mod radixdao {
 
         shares: Vault,
 
-        bond : Vault,
+        bond : Option<Vault>,
 
         dao_token_address: ResourceAddress,
 
@@ -43,11 +43,7 @@ mod radixdao {
 
         // Add ZeroCouponBond component
         //zero_coupon_bond: Option<Global<ZeroCouponBond>>,
-        zero_coupon_bond: HashMap<ComponentAddress, Vec<Global<ZeroCouponBond>>>,
-
-
-
-        
+        zero_coupon_bond: HashMap<ComponentAddress, Vec<Global<ZeroCouponBond>>>        
     }
 
     impl TokenWeigtedDao {
@@ -76,6 +72,11 @@ mod radixdao {
 
             //elaborate community
             description: String,
+
+            tags : Vec<String>,
+
+            purpose : String
+
         ) -> (Global<TokenWeigtedDao>, Bucket) {
             // reserve an address for the DAO component
             let (address_reservation, _) =
@@ -142,13 +143,15 @@ mod radixdao {
 
                 shares: Vault::new(XRD),
 
-                bond : Vault::new(XRD),
+                bond : None,
 
                 // voters: HashMap::new()
                 // voted_addresses: HashSet::new(),
 
                 // Initialize zero_coupon_bond as None
                 zero_coupon_bond: HashMap::new(),
+
+
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
@@ -180,6 +183,10 @@ mod radixdao {
                 total_token: token_supply,
 
                 token_image: power_token_url,
+
+                tags : tags.clone(),
+
+                purpose : purpose.clone()
             };
 
             // emit event | event emission
@@ -288,10 +295,8 @@ mod radixdao {
             minimun_quorum: u8,
             start_time: scrypto::time::UtcDateTime,
             end_time: scrypto::time::UtcDateTime,
-
-            address_issued_bonds_to_sell: ComponentAddress,
-
-            target_xrd_amount: Decimal,
+            address_issued_bonds_to_sell: Option<ComponentAddress>,
+            target_xrd_amount: Option<Decimal>,
         ) -> Global<crate::proposal::pandao_praposal::TokenWeightProposal> {
             use crate::proposal::pandao_praposal::TokenWeightProposal;
 
@@ -300,7 +305,11 @@ mod radixdao {
                 "there is already a praposal underway , can not create more"
             );
 
-            assert!(self.zero_coupon_bond.contains_key(&address_issued_bonds_to_sell), "The Address you have specified has not created any bond");
+            if let Some(address_selling_bonds) = address_issued_bonds_to_sell{
+
+                assert!(self.zero_coupon_bond.contains_key(&address_selling_bonds), "The Address you have specified has not created any bond");
+
+            }
 
             let (global_proposal_component, _) = TokenWeightProposal::new(
                 title.clone(),
@@ -319,8 +328,8 @@ mod radixdao {
             let end_time_ts: i64 = end_time.to_instant().seconds_since_unix_epoch;
 
             let praposal_metadata = PraposalMetadata {
-                title: title,
-                description: description,
+                title,
+                description,
                 minimum_quorum: minimun_quorum.into(),
                 end_time_ts,
                 start_time_ts,
@@ -363,15 +372,16 @@ mod radixdao {
                 let payment = self.shares.take(target_xrd_amount);
 
                 // Call the purchase_bond function
-                let (remaining, purchased_amt, purchased_bond_address) = self.purchase_bond(bond_creator_address, payment);
+                // let (remaining, purchased_amt, purchased_bond_address) = self.purchase_bond(bond_creator_address, payment);
+                let remaining = self.purchase_bond(bond_creator_address, payment);
 
                 // Handle remaining funds and received bond NFT
                 self.shares.put(remaining);
 
                 let praposal_metadata = PraposalExecute {
                     praposal_address: proposal.address(),
-                    purchased_bond_address,
-                    purchased_amount : purchased_amt
+                    // purchased_bond_address,
+                    // purchased_amount : purchased_amt
                 };
 
                 let component_address = Runtime::global_address();
@@ -391,6 +401,9 @@ mod radixdao {
         //TODO: vote fn
 
         pub fn vote(&mut self, token: Bucket, against: bool, account: Global<Account>) -> Bucket {
+
+            let owner_role_of_voter = account.get_owner_role();
+            Runtime::assert_access_rule(owner_role_of_voter.rule);
 
             if let Some(proposal) = self.current_praposal {
 
@@ -497,7 +510,7 @@ mod radixdao {
             &mut self,
             bond_creator_address: ComponentAddress,
             payment: Bucket,
-        ) -> (Bucket, Decimal, ResourceAddress) {
+        ) -> Bucket{
 
             assert!(
                 self.zero_coupon_bond.contains_key(&bond_creator_address),
@@ -515,14 +528,15 @@ mod radixdao {
                 bond_components.last_mut().expect("No bond component found");
 
             // Purchase bond from the latest bond component
-            let (purchased_bond, payment)= latest_bond_component.purchase_bond(payment);
-
-            let purchased_amount = purchased_bond.amount();
-            let purchased_bond_address = purchased_bond.resource_address();
-
+            let (purchased_bond, payment) = latest_bond_component.purchase_bond(payment);
             self.update_bond_vault_and_store(purchased_bond);
 
-            (payment, purchased_amount, purchased_bond_address) 
+            // let purchased_amount = purchased_bond.amount().clone();
+            // let purchased_bond_address = purchased_bond.resource_address().clone();
+
+            payment
+
+            // (payment, purchased_amount, purchased_bond_address) 
              
         }
 
@@ -608,9 +622,11 @@ mod radixdao {
 
         pub fn update_bond_vault_and_store(&mut self, mut desired_bond : Bucket){
             let desired_resource_address : ResourceAddress = desired_bond.resource_address();
-            self.bond = Vault::new(desired_resource_address);
-            let collected_dersired_bond = desired_bond.take(desired_bond.amount());
-            self.bond.put(collected_dersired_bond);
+            self.bond = Some(Vault::new(desired_resource_address));
+            let collected_dersired_bond : Bucket = desired_bond.take(desired_bond.amount());
+            let vault = self.bond.as_mut().unwrap();
+            vault.put(collected_dersired_bond);
+
         }
     }
 }

@@ -19,3 +19,28 @@ Tuple(
 1u8 ,
 1u8)
 ;
+
+
+CALL_METHOD
+Address("component_tdx_2_1crl2jzc0a52kkkr9nlh82cxvpf5np7puuk3gnpagwz7j6s4cxj9zx6")
+"create_praposal"
+"Token Price"
+"Should we increase token price?"
+5u8
+Tuple(
+2024u32 ,
+9u8 ,
+9u8 ,
+20u8 ,
+22u8 ,
+22u8)
+Tuple(
+2024u32 ,
+9u8 ,
+12u8 ,
+1u8 ,
+1u8 ,
+1u8)
+Address("account_tdx_2_128e6fmjkhjqx0n8h9562rrvstl883wq22pzea4ucnnx0762ptlch4s")
+Decimal("40")
+;

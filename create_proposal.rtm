@@ -22,7 +22,7 @@ Tuple(
 
 
 CALL_METHOD
-Address("component_tdx_2_1crl2jzc0a52kkkr9nlh82cxvpf5np7puuk3gnpagwz7j6s4cxj9zx6")
+Address("component_tdx_2_1cpp30nrxvy2hmjws56neftyt63a39pqnq435fejfa5j7v6y7e5xn42")
 "create_praposal"
 "Token Price"
 "Should we increase token price?"
@@ -43,4 +43,10 @@ Tuple(
 1u8)
 Address("account_tdx_2_128e6fmjkhjqx0n8h9562rrvstl883wq22pzea4ucnnx0762ptlch4s")
 Decimal("40")
+Enum<1u8>(
+Address("account_tdx_2_128e6fmjkhjqx0n8h9562rrvstl883wq22pzea4ucnnx0762ptlch4s")
+)
+Enum<1u8>(
+Decimal("40")
+)
 ;

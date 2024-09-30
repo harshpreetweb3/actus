@@ -4,7 +4,7 @@ CALL_METHOD
     Decimal("5000")
 ;
 CALL_FUNCTION
-    Address("package_sim1pk3cmat8st4ja2ms8mjqy2e9ptk8y6cx40v4qnfrkgnxcp2krkpr92")
+    Address("package_tdx_2_1p5jhgpsvl66cdfht4psnxakr4cj4h6nzk9ddw6kz00t6t42xce5qtx")
     "TokenWeigtedDao"
     "initiate"
     "Panjab Investment DAO"
@@ -15,9 +15,14 @@ CALL_FUNCTION
     "https://pbs.twimg.com/profile_images/1643159245389713408/47gnTbms_200x200.jpg"
     "https://pbs.twimg.com/profile_images/1548373397289455616/OFhGnboY_400x400.jpg"
     "This is a DAO for managing community projects"
+    Array<String>(
+    "investment",
+    "finance")
+    "Investment is the primary objective"
 ;
+
 CALL_METHOD
-    Address("account_sim1c956qr3kxlgypxwst89j9yf24tjc7zxd4up38x37zr6q4jxdx9rhma")
+    Address("account_tdx_2_128e6fmjkhjqx0n8h9562rrvstl883wq22pzea4ucnnx0762ptlch4s")
     "try_deposit_batch_or_refund"
     Expression("ENTIRE_WORKTOP")
     Enum<0u8>()

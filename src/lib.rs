@@ -13,6 +13,7 @@ mod radixdao {
     use super::*;
     use proposal::pandao_praposal::TokenWeightProposal;
     use scrypto::address;
+    // use scrypto_test::prelude::drop_fungible_bucket;
     use zerocouponbond::zerocouponbond::ZeroCouponBond;
 
     // Use the ZeroCouponBond from the zerocouponbond module
@@ -352,7 +353,7 @@ mod radixdao {
             global_proposal_component
         }
 
-        pub fn execute_proposal(&mut self) {
+        pub fn execute_proposal(&mut self) -> Bucket{
             if let Some(proposal) = self.current_praposal {
                 // Directly use the bond creator address from the proposal
 
@@ -373,7 +374,7 @@ mod radixdao {
 
                 // Call the purchase_bond function
                 // let (remaining, purchased_amt, purchased_bond_address) = self.purchase_bond(bond_creator_address, payment);
-                let remaining = self.purchase_bond(bond_creator_address, payment);
+                let (remaining, empty_bucket) = self.purchase_bond(bond_creator_address, payment);
 
                 // Handle remaining funds and received bond NFT
                 self.shares.put(remaining);
@@ -393,8 +394,12 @@ mod radixdao {
                     component_address,
                 });
                 self.current_praposal = None;
+
+                empty_bucket
             } else {
-                assert!(false, "there is no current active proposal")
+                
+                // assert!(false, "there is no current active proposal")
+                panic!("there is no current active proposal")
             }
         }
 
@@ -510,7 +515,7 @@ mod radixdao {
             &mut self,
             bond_creator_address: ComponentAddress,
             payment: Bucket,
-        ) -> Bucket{
+        ) -> (Bucket, Bucket){
 
             assert!(
                 self.zero_coupon_bond.contains_key(&bond_creator_address),
@@ -529,12 +534,12 @@ mod radixdao {
 
             // Purchase bond from the latest bond component
             let (purchased_bond, payment) = latest_bond_component.purchase_bond(payment);
-            self.update_bond_vault_and_store(purchased_bond);
+            let empty_bucket = self.update_bond_vault_and_store(purchased_bond);
 
             // let purchased_amount = purchased_bond.amount().clone();
             // let purchased_bond_address = purchased_bond.resource_address().clone();
 
-            payment
+            (payment, empty_bucket)
 
             // (payment, purchased_amount, purchased_bond_address) 
              
@@ -620,13 +625,13 @@ mod radixdao {
             result
         }
 
-        pub fn update_bond_vault_and_store(&mut self, mut desired_bond : Bucket){
+        pub fn update_bond_vault_and_store(&mut self, mut desired_bond : Bucket) -> Bucket {
             let desired_resource_address : ResourceAddress = desired_bond.resource_address();
             self.bond = Some(Vault::new(desired_resource_address));
             let collected_dersired_bond : Bucket = desired_bond.take(desired_bond.amount());
             let vault = self.bond.as_mut().unwrap();
             vault.put(collected_dersired_bond);
-
+            desired_bond
         }
     }
 }

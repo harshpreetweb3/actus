@@ -11,14 +11,14 @@ mod zerocouponbond;
 mod radixdao {
 
     use super::*;
-    use 
-    proposal::pandao_praposal::TokenWeightProposal;
+    use proposal::pandao_praposal::TokenWeightProposal;
+    use scrypto::address;
+    // use scrypto_test::prelude::drop_fungible_bucket;
     use zerocouponbond::zerocouponbond::ZeroCouponBond;
 
     // Use the ZeroCouponBond from the zerocouponbond module
 
     use crate::zerocouponbond::BondDetails;
-
 
     pub struct TokenWeigtedDao {
         current_praposal: Option<Global<TokenWeightProposal>>,
@@ -29,6 +29,8 @@ mod radixdao {
 
         shares: Vault,
 
+        bond : Option<Vault>,
+
         dao_token_address: ResourceAddress,
 
         owner_token_addresss: ResourceAddress,
@@ -36,8 +38,9 @@ mod radixdao {
         token_price: Decimal,
 
         buy_back_price: Decimal,
+
         // pub voted_addresses: HashSet<Address>
-        pub voted_addresses: HashSet<ComponentAddress>,
+        // pub voted_addresses: HashSet<ComponentAddress>,
 
         // Add ZeroCouponBond component
         //zero_coupon_bond: Option<Global<ZeroCouponBond>>,
@@ -47,9 +50,8 @@ mod radixdao {
         contributors: HashMap<ComponentAddress, Decimal>,
     }
 
-    
-
     impl TokenWeigtedDao {
+
         pub fn initiate(
             //community name | community title
             organization_name: String,
@@ -74,6 +76,11 @@ mod radixdao {
 
             //elaborate community
             description: String,
+
+            tags : Vec<String>,
+
+            purpose : String
+
         ) -> (Global<TokenWeigtedDao>, Bucket) {
             // reserve an address for the DAO component
             let (address_reservation, _) =
@@ -139,8 +146,11 @@ mod radixdao {
                 buy_back_price: token_buy_back_price.clone(),
 
                 shares: Vault::new(XRD),
+
+                bond : None,
+
                 // voters: HashMap::new()
-                voted_addresses: HashSet::new(),
+                // voted_addresses: HashSet::new(),
 
                 // Initialize zero_coupon_bond as None
                 zero_coupon_bond: HashMap::new(),
@@ -178,6 +188,10 @@ mod radixdao {
                 total_token: token_supply,
 
                 token_image: power_token_url,
+
+                tags : tags.clone(),
+
+                purpose : purpose.clone()
             };
 
             // emit event | event emission
@@ -200,11 +214,6 @@ mod radixdao {
             (component, owner_badge)
         }
 
-        
-        
-
-
-
         // TODO: OBTAIN A COMMUNITY TOKEN
 
         pub fn obtain_community_token(
@@ -213,8 +222,8 @@ mod radixdao {
             token_amount: Decimal,
             // minter_address: Option<String>,
         ) -> (Bucket, Bucket) {
-            //TODO: given amount >= amount needed to purchase community tokens as per required amount
-            assert!((self.token_price * token_amount) <= xrd.amount());
+
+            assert!((self.token_price * token_amount) <= xrd.amount(), "you are paying an insufficient amount");
 
             let collected_xrd = xrd.take(self.token_price * token_amount);
 
@@ -291,6 +300,8 @@ mod radixdao {
             minimun_quorum: u8,
             start_time: scrypto::time::UtcDateTime,
             end_time: scrypto::time::UtcDateTime,
+            address_issued_bonds_to_sell: Option<ComponentAddress>,
+            target_xrd_amount: Option<Decimal>,
         ) -> Global<crate::proposal::pandao_praposal::TokenWeightProposal> {
             use crate::proposal::pandao_praposal::TokenWeightProposal;
 
@@ -298,6 +309,12 @@ mod radixdao {
                 self.current_praposal.is_none(),
                 "there is already a praposal underway , can not create more"
             );
+
+            if let Some(address_selling_bonds) = address_issued_bonds_to_sell{
+
+                assert!(self.zero_coupon_bond.contains_key(&address_selling_bonds), "The Address you have specified has not created any bond");
+
+            }
 
             let (global_proposal_component, _) = TokenWeightProposal::new(
                 title.clone(),
@@ -307,19 +324,24 @@ mod radixdao {
                 end_time,
                 self.owner_token_addresss.clone(),
                 self.dao_token_address.clone(),
+                address_issued_bonds_to_sell.clone(),
+                target_xrd_amount.clone(),
             );
 
             // global_proposal_component.callme("string".into()) ;
             let start_time_ts: i64 = start_time.to_instant().seconds_since_unix_epoch;
             let end_time_ts: i64 = end_time.to_instant().seconds_since_unix_epoch;
+
             let praposal_metadata = PraposalMetadata {
-                title: title,
-                description: description,
+                title,
+                description,
                 minimum_quorum: minimun_quorum.into(),
                 end_time_ts,
                 start_time_ts,
                 owner_token_address: self.owner_token_addresss.clone(),
                 component_address: global_proposal_component.address(),
+                address_issued_bonds_to_sell,
+                target_xrd_amount
             };
             let component_address = Runtime::global_address();
 
@@ -335,11 +357,38 @@ mod radixdao {
             global_proposal_component
         }
 
-        pub fn execute_proposal(&mut self) {
+        pub fn execute_proposal(&mut self) -> Bucket{
             if let Some(proposal) = self.current_praposal {
+                // Directly use the bond creator address from the proposal
+
+                let bond_creator_address = proposal.get_address_issued_bonds();
+
+                let target_xrd_amount = proposal.get_target_xrd_amount();
+
+                // Check if the treasury has enough XRD
+                let treasury_balance = self.shares.amount();
+
+                assert!(
+                    treasury_balance >= target_xrd_amount,
+                    "Insufficient funds in the treasury to execute the proposal."
+                );
+
+                // Create a bucket with the exact XRD amount needed for the purchase
+                let payment = self.shares.take(target_xrd_amount);
+
+                // Call the purchase_bond function
+                // let (remaining, purchased_amt, purchased_bond_address) = self.purchase_bond(bond_creator_address, payment);
+                let (remaining, empty_bucket) = self.purchase_bond(bond_creator_address, payment);
+
+                // Handle remaining funds and received bond NFT
+                self.shares.put(remaining);
+
                 let praposal_metadata = PraposalExecute {
                     praposal_address: proposal.address(),
+                    // purchased_bond_address,
+                    // purchased_amount : purchased_amt
                 };
+
                 let component_address = Runtime::global_address();
 
                 Runtime::emit_event(PandaoEvent {
@@ -349,15 +398,24 @@ mod radixdao {
                     component_address,
                 });
                 self.current_praposal = None;
+
+                empty_bucket
             } else {
-                assert!(false, "there is no current active proposal")
+                
+                // assert!(false, "there is no current active proposal")
+                panic!("there is no current active proposal")
             }
         }
 
         //TODO: vote fn
 
         pub fn vote(&mut self, token: Bucket, against: bool, account: Global<Account>) -> Bucket {
+
+            let owner_role_of_voter = account.get_owner_role();
+            Runtime::assert_access_rule(owner_role_of_voter.rule);
+
             if let Some(proposal) = self.current_praposal {
+
                 assert_eq!(
                     token.resource_address(),
                     self.dao_token_address,
@@ -367,9 +425,11 @@ mod radixdao {
                 // Get the voter address from the account
                 let voter_address = account.address();
 
+                let mut vote_caster_addresses = proposal.get_vote_caster_addresses();
+
                 // Check if the voter has already voted
                 assert!(
-                    !self.voted_addresses.contains(&voter_address),
+                    !vote_caster_addresses.contains(&voter_address),
                     "You have already voted on this proposal."
                 );
 
@@ -379,6 +439,7 @@ mod radixdao {
                     praposal_address: proposal.address(),
                     voting_amount: amount,
                     againts: against,
+                    voter_address
                 };
 
                 Runtime::emit_event(PandaoEvent {
@@ -388,13 +449,12 @@ mod radixdao {
                     meta_data: DaoEvent::PraposalVote(event_metadata),
                 });
 
-                let result = proposal.vote(token, against);
- 
+                let result = proposal.vote(token, against); 
+
                 // Mark this voter as having voted
-                self.voted_addresses.insert(voter_address);
+                vote_caster_addresses.insert(voter_address);
 
                 result
-
             } else {
                 assert!(false, "no active proposal");
                 panic!();
@@ -415,10 +475,8 @@ mod radixdao {
             bond_position: String,
             price: Decimal,
             number_of_bonds: Decimal,
-            your_address : ComponentAddress
+            your_address: ComponentAddress, //OK -> Account address is of ComponentAddress Type
         ) -> Global<ZeroCouponBond> {
-
-
             // Ensure the address has not created any bonds already
             assert!(
                 !self.zero_coupon_bond.contains_key(&your_address),
@@ -440,7 +498,10 @@ mod radixdao {
                 number_of_bonds,
             );
 
-            self.zero_coupon_bond.entry(your_address).or_insert_with(Vec::new).push(bond_component);
+            self.zero_coupon_bond
+                .entry(your_address)
+                .or_insert_with(Vec::new)
+                .push(bond_component);
             // self.zero_coupon_bond = Some(bond_component);
 
             bond_component
@@ -458,7 +519,7 @@ mod radixdao {
             &mut self,
             bond_creator_address: ComponentAddress,
             payment: Bucket
-        ) -> (Bucket, Bucket) {
+        ) -> (Bucket, Bucket){
 
             assert!(
                 self.zero_coupon_bond.contains_key(&bond_creator_address),
@@ -466,20 +527,33 @@ mod radixdao {
             );
 
             // Retrieve the most recent bond component created by the bond creator
-            let bond_components = self.zero_coupon_bond.get_mut(&bond_creator_address).unwrap();
+            let bond_components = self
+                .zero_coupon_bond
+                .get_mut(&bond_creator_address)
+                .unwrap();
 
-            //*we can restrict a creator in terms of bond creation 
-            let latest_bond_component = bond_components.last_mut().expect("No bond component found");
+            //*we can restrict a creator in terms of bond creation
+            let latest_bond_component =
+                bond_components.last_mut().expect("No bond component found");
 
             // Purchase bond from the latest bond component
-            latest_bond_component.purchase_bond(payment)
+            let (purchased_bond, payment) = latest_bond_component.purchase_bond(payment);
+            let empty_bucket = self.update_bond_vault_and_store(purchased_bond);
+
+            // let purchased_amount = purchased_bond.amount().clone();
+            // let purchased_bond_address = purchased_bond.resource_address().clone();
+
+            (payment, empty_bucket)
+
+            // (payment, purchased_amount, purchased_bond_address) 
+             
         }
 
         // New method to sell a bond
         pub fn sell_bond(
             &mut self,
             bond_creator_address: ComponentAddress,
-            bond: Bucket
+            bond: Bucket,
         ) -> Bucket {
             assert!(
                 self.zero_coupon_bond.contains_key(&bond_creator_address),
@@ -487,8 +561,12 @@ mod radixdao {
             );
 
             // Retrieve the most recent bond component created by the bond creator
-            let bond_components = self.zero_coupon_bond.get_mut(&bond_creator_address).unwrap();
-            let latest_bond_component = bond_components.last_mut().expect("No bond component found");
+            let bond_components = self
+                .zero_coupon_bond
+                .get_mut(&bond_creator_address)
+                .unwrap();
+            let latest_bond_component =
+                bond_components.last_mut().expect("No bond component found");
 
             // Sell bond from the latest bond component
             latest_bond_component.sell_the_bond(bond)
@@ -526,12 +604,12 @@ mod radixdao {
 
         // Function to retrieve bond creators and their bond component addresses
         pub fn get_bond_creators(&self) -> HashMap<ComponentAddress, Vec<Global<ZeroCouponBond>>> {
-            self.zero_coupon_bond.clone()  // Return the HashMap of bond creators and their bonds
+            self.zero_coupon_bond.clone() // Return the HashMap of bond creators and their bonds
         }
 
         // New function to get all bond creator addresses
         pub fn get_bond_creator_addresses(&self) -> Vec<ComponentAddress> {
-            self.zero_coupon_bond.keys().cloned().collect()  // Return a list of bond creator addresses
+            self.zero_coupon_bond.keys().cloned().collect() // Return a list of bond creator addresses
         }
 
         // Function to get bond creator address and bond details
@@ -634,7 +712,6 @@ mod radixdao {
 
 //*get_bond_details
 // resim call-method component_sim1cpwu4wc6rg0am8l9prnh2lzqkk6hue6stzqhdx48rzvek2mmm5vp0p get_bond_details
-
 
 // create_proposal
 // resim call-method component_sim1czwnyl3pfn955s45a2js64w8zjlptwz4y3w4wwwl944rk2l2ceapsc create_praposal "Panda Fridays" "Introduce a fun Panda-themed event every Friday." 10 1694774400 1695052800

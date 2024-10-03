@@ -1,0 +1,17 @@
+CALL_METHOD
+Address("component_tdx_2_1cpp30nrxvy2hmjws56neftyt63a39pqnq435fejfa5j7v6y7e5xn42")
+"create_zero_coupon_bond"
+"Principal at Maturity"
+"PAM"
+"#1"
+Decimal("2")
+"xrd"
+1701039000u64
+1695849000u64
+Decimal("40")
+0u64
+"long"
+Decimal("40")
+Decimal("100")
+Address("account_tdx_2_128e6fmjkhjqx0n8h9562rrvstl883wq22pzea4ucnnx0762ptlch4s")
+;

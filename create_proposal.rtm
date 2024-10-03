@@ -1,0 +1,40 @@
+CALL_METHOD
+Address("component_tdx_2_1cpp30nrxvy2hmjws56neftyt63a39pqnq435fejfa5j7v6y7e5xn42")
+"create_praposal"
+"Token Price"
+"Should we increase token price?"
+5u8
+Tuple(
+2024u32 ,
+9u8 ,
+9u8 ,
+20u8 ,
+22u8 ,
+22u8)
+Tuple(
+2024u32 ,
+9u8 ,
+12u8 ,
+1u8 ,
+1u8 ,
+1u8)
+Enum<1u8>(
+Address("account_tdx_2_128e6fmjkhjqx0n8h9562rrvstl883wq22pzea4ucnnx0762ptlch4s")
+)
+Enum<1u8>(
+Decimal("40")
+)
+;
+
+
+
+
+
+
+
+
+
+
+
+
+

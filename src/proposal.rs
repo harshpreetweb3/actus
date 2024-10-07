@@ -38,7 +38,9 @@ mod pandao_praposal {
         pub address_issued_bonds_to_sell : Option<ComponentAddress>,
         pub target_xrd_amount: Option<Decimal>,
 
-        pub vote_caster_addresses : HashSet<ComponentAddress>
+        pub vote_caster_addresses : HashSet<ComponentAddress>,
+
+        
     }
 
     impl TokenWeightProposal  {

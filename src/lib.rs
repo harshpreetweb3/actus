@@ -10,6 +10,8 @@ mod zerocouponbond;
 #[events(PandaoEvent, DaoEvent, TokenWightedDeployment, DaoType, EventType)]
 mod radixdao {
 
+    use std::collections::HashMap;
+
     use super::*;
     use proposal::pandao_praposal::TokenWeightProposal;
     use scrypto::address;
@@ -29,7 +31,7 @@ mod radixdao {
 
         shares: Vault,
 
-        bond : Option<Vault>,
+        bonds : HashMap<ResourceAddress, Vault>,
 
         dao_token_address: ResourceAddress,
 
@@ -38,16 +40,12 @@ mod radixdao {
         token_price: Decimal,
 
         buy_back_price: Decimal,
-
-        // pub voted_addresses: HashSet<Address>
-        // pub voted_addresses: HashSet<ComponentAddress>,
-
+        
         // Add ZeroCouponBond component
-        //zero_coupon_bond: Option<Global<ZeroCouponBond>>,
 
         zero_coupon_bond : HashMap<ComponentAddress, Vec<Global<ZeroCouponBond>>>,
 
-        contributors: HashMap<ComponentAddress, Decimal>,
+contributors: HashMap<ComponentAddress, Decimal>,
     }
 
     impl TokenWeigtedDao {
@@ -147,10 +145,7 @@ mod radixdao {
 
                 shares: Vault::new(XRD),
 
-                bond : None,
-
-                // voters: HashMap::new()
-                // voted_addresses: HashSet::new(),
+                bonds : HashMap::new(),
 
                 // Initialize zero_coupon_bond as None
                 zero_coupon_bond: HashMap::new(),
@@ -357,7 +352,7 @@ mod radixdao {
             global_proposal_component
         }
 
-        pub fn execute_proposal(&mut self) -> Bucket{
+        pub fn execute_proposal(&mut self){
             if let Some(proposal) = self.current_praposal {
                 // Directly use the bond creator address from the proposal
 
@@ -378,7 +373,7 @@ mod radixdao {
 
                 // Call the purchase_bond function
                 // let (remaining, purchased_amt, purchased_bond_address) = self.purchase_bond(bond_creator_address, payment);
-                let (remaining, empty_bucket) = self.purchase_bond(bond_creator_address, payment);
+                let remaining = self.purchase_bond(bond_creator_address, payment);
 
                 // Handle remaining funds and received bond NFT
                 self.shares.put(remaining);
@@ -398,8 +393,6 @@ mod radixdao {
                     component_address,
                 });
                 self.current_praposal = None;
-
-                empty_bucket
             } else {
                 
                 // assert!(false, "there is no current active proposal")
@@ -519,7 +512,7 @@ mod radixdao {
             &mut self,
             bond_creator_address: ComponentAddress,
             payment: Bucket
-        ) -> (Bucket, Bucket){
+        ) -> Bucket{
 
             assert!(
                 self.zero_coupon_bond.contains_key(&bond_creator_address),
@@ -538,15 +531,8 @@ mod radixdao {
 
             // Purchase bond from the latest bond component
             let (purchased_bond, payment) = latest_bond_component.purchase_bond(payment);
-            let empty_bucket = self.update_bond_vault_and_store(purchased_bond);
-
-            // let purchased_amount = purchased_bond.amount().clone();
-            // let purchased_bond_address = purchased_bond.resource_address().clone();
-
-            (payment, empty_bucket)
-
-            // (payment, purchased_amount, purchased_bond_address) 
-             
+            self.update_bond_vault_and_store(purchased_bond);
+            payment
         }
 
         // New method to sell a bond
@@ -680,6 +666,18 @@ mod radixdao {
         // Method to get all contributors and their total contributions
         pub fn get_all_contributors(&self) -> HashMap<ComponentAddress, Decimal> {
             self.contributors.clone()
+        }
+
+        pub fn update_bond_vault_and_store(&mut self, desired_bond : Bucket){
+            let desired_resource_address : ResourceAddress = desired_bond.resource_address();
+            if !self.bonds.contains_key(&desired_resource_address){
+                self.bonds.insert(desired_resource_address, Vault::new(desired_resource_address));
+            }
+            //Get the vault for desired bond type
+            let vault = self.bonds.get_mut(&desired_resource_address).unwrap();
+            // let collected_dersired_bond : Bucket = desired_bond.take(desired_bond.amount());
+            vault.put(desired_bond);
+            // desired_bond
         }
 
 

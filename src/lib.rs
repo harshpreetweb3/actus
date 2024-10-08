@@ -42,7 +42,10 @@ mod radixdao {
         buy_back_price: Decimal,
         
         // Add ZeroCouponBond component
-        zero_coupon_bond: HashMap<ComponentAddress, Vec<Global<ZeroCouponBond>>>
+
+        zero_coupon_bond : HashMap<ComponentAddress, Vec<Global<ZeroCouponBond>>>,
+
+contributors: HashMap<ComponentAddress, Decimal>,
     }
 
     impl TokenWeigtedDao {
@@ -145,7 +148,11 @@ mod radixdao {
                 bonds : HashMap::new(),
 
                 // Initialize zero_coupon_bond as None
-                zero_coupon_bond: HashMap::new()            }
+                zero_coupon_bond: HashMap::new(),
+
+                contributors: HashMap::new(),
+
+            }
             .instantiate()
             .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
                 owner_token_addresss.clone()
@@ -611,6 +618,59 @@ mod radixdao {
             result
         }
 
+        pub fn send_money_to_dao_treasury(&mut self, payment: Bucket, account: Global<Account>) -> Bucket {
+            // Ensure the payment is in XRD
+            assert_eq!(
+                payment.resource_address(),
+                XRD,
+                "Only XRD tokens are accepted for treasury contributions"
+            );
+    
+            // Get the amount being sent
+            let amount = payment.amount();
+    
+            // Get the sender's address
+            let sender_address = account.address();
+    
+            // Store the payment in the dao_token vault
+            self.dao_token.put(payment);
+    
+            // Update the contributor's record
+            self.update_contributor_record(sender_address, amount);
+    
+            // Emit an event for the contribution
+            self.emit_contribution_event(sender_address, amount);
+    
+            // Return an empty bucket
+            Bucket::new(XRD)
+        }
+    
+        // Helper method to update the contributor's record
+        fn update_contributor_record(&mut self, address: ComponentAddress, amount: Decimal) {
+            *self.contributors.entry(address).or_insert(Decimal::zero()) += amount;
+        }
+    
+        // Helper method to emit a contribution event
+        fn emit_contribution_event(&self, address: ComponentAddress, amount: Decimal) {
+            let event_metadata = TreasuryContribution {
+                contributor: address,
+                amount: amount,
+                timestamp: Runtime::current_epoch().number(),
+            };
+    
+            Runtime::emit_event(PandaoEvent {
+                event_type: EventType::TREASURY_CONTRIBUTION,
+                dao_type: DaoType::TokenWeight,
+                component_address: Runtime::global_address(),
+                meta_data: DaoEvent::TreasuryContribution(event_metadata),
+            });
+        }
+    
+        // Method to get all contributors and their total contributions
+        pub fn get_all_contributors(&self) -> HashMap<ComponentAddress, Decimal> {
+            self.contributors.clone()
+        }
+
         pub fn update_bond_vault_and_store(&mut self, desired_bond : Bucket){
             let desired_resource_address : ResourceAddress = desired_bond.resource_address();
             if !self.bonds.contains_key(&desired_resource_address){
@@ -622,6 +682,8 @@ mod radixdao {
             vault.put(desired_bond);
             // desired_bond
         }
+
+
 
         pub fn execute_proposal_for_pandao(&mut self){
             match self.current_praposal{

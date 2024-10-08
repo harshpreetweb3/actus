@@ -385,6 +385,7 @@ mod radixdao {
                     meta_data: DaoEvent::ProposalExecute(praposal_metadata),
                     component_address,
                 });
+
                 self.current_praposal = None;
             } else {
                 
@@ -438,7 +439,9 @@ mod radixdao {
                 let result = proposal.vote(token, against); 
 
                 // Mark this voter as having voted
-                vote_caster_addresses.insert(voter_address);
+                // vote_caster_addresses.insert(voter_address);
+
+                proposal.set_vote_caster_address(voter_address);
 
                 result
             } else {
@@ -618,6 +621,18 @@ mod radixdao {
             // let collected_dersired_bond : Bucket = desired_bond.take(desired_bond.amount());
             vault.put(desired_bond);
             // desired_bond
+        }
+
+        pub fn execute_proposal_for_pandao(&mut self){
+            match self.current_praposal{
+                Some(current_proposal) =>{
+                    //earlier execute proposal was not taking any action but it was made to take action in financial dao case
+                    println!("your proposal is executed successfully");
+                    self.current_praposal = None;
+                },
+                // None => println!("there is not any proposal created")
+                None => assert!(false, "there is no any created proposal")            
+            }   
         }
     }
 }

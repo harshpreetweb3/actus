@@ -128,5 +128,9 @@ mod pandao_praposal {
             self.vote_caster_addresses.clone()
         }
 
+        pub fn set_vote_caster_address(&mut self, address : ComponentAddress){
+            self.vote_caster_addresses.insert(address);
+        }
+
     }
 }

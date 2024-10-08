@@ -4,7 +4,7 @@ CALL_METHOD
     Decimal("5000")
 ;
 CALL_FUNCTION
-    Address("package_tdx_2_1pkyemv8pr5znlu6drs0hwr9d3jwl6cz864ka93dzwu52mmkwd8ggra")
+    Address("package_tdx_2_1pkc7h6qheph0x0pts7zd9u09vtqm3qe79akuggxr2rkpck2pfcfmq6")
     "TokenWeigtedDao"
     "initiate"
     "Panjab Investment DAO"

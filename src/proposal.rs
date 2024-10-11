@@ -34,13 +34,10 @@ mod pandao_praposal {
     
         // A mapping of addresses to their respective vote weights.
         // pub votes: HashMap<Address, Decimal>,
-
         pub address_issued_bonds_to_sell : Option<ComponentAddress>,
         pub target_xrd_amount: Option<Decimal>,
-
         pub vote_caster_addresses : HashSet<ComponentAddress>,
-
-        
+        pub proposal_creator_address : Option<ComponentAddress>       
     }
 
     impl TokenWeightProposal  {
@@ -54,8 +51,10 @@ mod pandao_praposal {
             owner_badge_address: ResourceAddress,
             voter_badge_address: ResourceAddress,
             address_issued_bonds_to_sell : Option<ComponentAddress>,
-            target_xrd_amount : Option<Decimal>
+            target_xrd_amount : Option<Decimal>,
+            proposal_creator_address : Option<ComponentAddress>
         ) -> (Global<TokenWeightProposal >, GlobalAddressReservation) {
+            
             let (address_reservation, _) =
                 Runtime::allocate_component_address(TokenWeightProposal ::blueprint_id());
 
@@ -71,7 +70,8 @@ mod pandao_praposal {
                 voter_badge_address,
                 address_issued_bonds_to_sell,
                 target_xrd_amount,
-                vote_caster_addresses : HashSet::new()
+                vote_caster_addresses : HashSet::new(),
+                proposal_creator_address
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::None)

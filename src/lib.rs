@@ -23,7 +23,8 @@ mod radixdao {
     use crate::zerocouponbond::BondDetails;
 
     pub struct TokenWeigtedDao {
-        current_praposal: Option<Global<TokenWeightProposal>>,
+        // current_praposal: Option<Global<TokenWeightProposal>>,
+        current_praposals: HashMap<ComponentAddress, HashMap<usize, Global<TokenWeightProposal>>>,
 
         dao_token: Vault,
 
@@ -31,7 +32,7 @@ mod radixdao {
 
         shares: Vault,
 
-        bonds : HashMap<ResourceAddress, Vault>,
+        bonds: HashMap<ResourceAddress, Vault>,
 
         dao_token_address: ResourceAddress,
 
@@ -40,16 +41,14 @@ mod radixdao {
         token_price: Decimal,
 
         buy_back_price: Decimal,
-        
+
         // Add ZeroCouponBond component
+        zero_coupon_bond: HashMap<ComponentAddress, Vec<Global<ZeroCouponBond>>>,
 
-        zero_coupon_bond : HashMap<ComponentAddress, Vec<Global<ZeroCouponBond>>>,
-
-contributors: HashMap<ComponentAddress, Decimal>,
+        contributors: HashMap<ComponentAddress, Decimal>,
     }
 
     impl TokenWeigtedDao {
-
         pub fn initiate(
             //community name | community title
             organization_name: String,
@@ -75,10 +74,9 @@ contributors: HashMap<ComponentAddress, Decimal>,
             //elaborate community
             description: String,
 
-            tags : Vec<String>,
+            tags: Vec<String>,
 
-            purpose : String
-
+            purpose: String,
         ) -> (Global<TokenWeigtedDao>, Bucket) {
             // reserve an address for the DAO component
             let (address_reservation, _) =
@@ -137,7 +135,7 @@ contributors: HashMap<ComponentAddress, Decimal>,
 
                 owner_token_addresss: owner_token_addresss.clone(),
 
-                current_praposal: None,
+                current_praposals: HashMap::new(),
 
                 dao_token: Vault::with_bucket(voting_power_tokens),
 
@@ -145,13 +143,12 @@ contributors: HashMap<ComponentAddress, Decimal>,
 
                 shares: Vault::new(XRD),
 
-                bonds : HashMap::new(),
+                bonds: HashMap::new(),
 
                 // Initialize zero_coupon_bond as None
                 zero_coupon_bond: HashMap::new(),
 
                 contributors: HashMap::new(),
-
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
@@ -184,9 +181,9 @@ contributors: HashMap<ComponentAddress, Decimal>,
 
                 token_image: power_token_url,
 
-                tags : tags.clone(),
+                tags: tags.clone(),
 
-                purpose : purpose.clone()
+                purpose: purpose.clone(),
             };
 
             // emit event | event emission
@@ -217,8 +214,10 @@ contributors: HashMap<ComponentAddress, Decimal>,
             token_amount: Decimal,
             // minter_address: Option<String>,
         ) -> (Bucket, Bucket) {
-
-            assert!((self.token_price * token_amount) <= xrd.amount(), "you are paying an insufficient amount");
+            assert!(
+                (self.token_price * token_amount) <= xrd.amount(),
+                "you are paying an insufficient amount"
+            );
 
             let collected_xrd = xrd.take(self.token_price * token_amount);
 
@@ -258,8 +257,8 @@ contributors: HashMap<ComponentAddress, Decimal>,
         pub fn withdraw_power(&mut self, voting_power: Bucket) -> Bucket {
             // put the voting power back
             assert!(
-                self.current_praposal.is_none(),
-                "token can not be sold when there is an active praposal or incomplete proposal"
+                !self.current_praposals.is_empty(),
+                "token can not be sold when there are active praposals or incomplete proposals"
             );
 
             let power_amount = voting_power.amount();
@@ -288,6 +287,18 @@ contributors: HashMap<ComponentAddress, Decimal>,
             self.shares.take(power_amount * self.buy_back_price)
         }
 
+        pub fn get_usd_price() -> Decimal {
+            let usd_price = Runtime::get_usd_price();
+            usd_price
+        }
+
+        //get_unique_random_number
+        pub fn get_proposal_id() -> u64 {
+            let current_epoch = Runtime::current_epoch();
+            let unique_number: u64 = current_epoch.number();
+            unique_number
+        }
+
         pub fn create_praposal(
             &mut self,
             title: String,
@@ -297,18 +308,18 @@ contributors: HashMap<ComponentAddress, Decimal>,
             end_time: scrypto::time::UtcDateTime,
             address_issued_bonds_to_sell: Option<ComponentAddress>,
             target_xrd_amount: Option<Decimal>,
-        ) -> Global<crate::proposal::pandao_praposal::TokenWeightProposal> {
+            proposal_creator_address: Option<ComponentAddress>, // new argument
+        ) -> (
+            Global<crate::proposal::pandao_praposal::TokenWeightProposal>,
+            String,
+        ) {
             use crate::proposal::pandao_praposal::TokenWeightProposal;
 
-            assert!(
-                self.current_praposal.is_none(),
-                "there is already a praposal underway , can not create more"
-            );
-
-            if let Some(address_selling_bonds) = address_issued_bonds_to_sell{
-
-                assert!(self.zero_coupon_bond.contains_key(&address_selling_bonds), "The Address you have specified has not created any bond");
-
+            if let Some(address_selling_bonds) = address_issued_bonds_to_sell {
+                assert!(
+                    self.zero_coupon_bond.contains_key(&address_selling_bonds),
+                    "The Address you have specified has not created any bond"
+                );
             }
 
             let (global_proposal_component, _) = TokenWeightProposal::new(
@@ -321,11 +332,25 @@ contributors: HashMap<ComponentAddress, Decimal>,
                 self.dao_token_address.clone(),
                 address_issued_bonds_to_sell.clone(),
                 target_xrd_amount.clone(),
+                proposal_creator_address,
             );
 
             // global_proposal_component.callme("string".into()) ;
             let start_time_ts: i64 = start_time.to_instant().seconds_since_unix_epoch;
             let end_time_ts: i64 = end_time.to_instant().seconds_since_unix_epoch;
+
+            //unique-id-generation
+            let proposal_id: usize = Self::get_proposal_id()
+                .try_into()
+                .expect("couldn't get called successfully");
+            //populate HashMap with newly created proposal
+
+            let inner_map = self
+                .current_praposals
+                .entry(proposal_creator_address.unwrap())
+                .or_insert_with(HashMap::new);
+            
+            inner_map.insert(proposal_id, global_proposal_component);
 
             let praposal_metadata = PraposalMetadata {
                 title,
@@ -336,7 +361,8 @@ contributors: HashMap<ComponentAddress, Decimal>,
                 owner_token_address: self.owner_token_addresss.clone(),
                 component_address: global_proposal_component.address(),
                 address_issued_bonds_to_sell,
-                target_xrd_amount
+                target_xrd_amount,
+                proposal_creator_address,
             };
             let component_address = Runtime::global_address();
 
@@ -347,19 +373,85 @@ contributors: HashMap<ComponentAddress, Decimal>,
                 component_address,
             });
 
-            // assign proposal to component
-            self.current_praposal = Some(global_proposal_component);
-            global_proposal_component
+            let mut message = String::new();
+            message = format!("Proposal created with id : {}", proposal_id);
+
+            (global_proposal_component, message)
         }
 
-        pub fn execute_proposal(&mut self){
-            if let Some(proposal) = self.current_praposal {
-                // Directly use the bond creator address from the proposal
+        fn get_created_proposals(
+            &self,
+            your_address: ComponentAddress,
+        ) -> Result<HashMap<usize, Global<TokenWeightProposal>>, String> {
+            let inner_map = self.current_praposals.get(&your_address);
+            match inner_map {
+                Some(map) => {
+                    let map = map;
+                    Ok(map.clone())
+                }
+                None => Err(format!("this addres has no created proposals")),
+            }
+        }
 
-                let bond_creator_address = proposal.get_address_issued_bonds();
+        fn get_proposal_using_proposal_id(
+            &self,
+            proposal_id: usize,
+        ) -> Result<Global<TokenWeightProposal>, String> {
+            for (_, inner_map) in &self.current_praposals {
+                let proposal = inner_map.get(&proposal_id);
+                match proposal {
+                    Some(proposal) => return Ok(proposal.clone()),
+                    None => return Err(format!("proposal with id : {proposal_id} not found")),
+                }
+            }
+            return Err(format!("proposal with id : {proposal_id} not found"));
+        }
 
-                let target_xrd_amount = proposal.get_target_xrd_amount();
+        fn get_all_proposals(&self) -> Vec<Global<TokenWeightProposal>> {
+            let mut all_proposals: Vec<Global<TokenWeightProposal>> = Vec::new();
+            for (_, inner_map) in &self.current_praposals {
+                for (_, proposal) in inner_map {
+                    all_proposals.push(proposal.clone());
+                }
+            }
+            all_proposals
+        }
 
+        // fn execute_proposal(&self, proposal_id : usize){
+        //     let mut bond_creator_address_option : Option<ComponentAddress>  = None;
+        //     let mut target_xrd_amount_option : Option<Decimal> = None;
+        //     let mut proposal_option : Option<Global<TokenWeightProposal>> = None;
+
+        //     for(_, inner_map) in &self.current_praposals{
+        //         if let Some(proposal) = inner_map.get(&proposal_id){
+        //             proposal_option = Some(proposal.clone());
+
+        //         }
+        //     }
+
+        // }
+
+        pub fn execute_proposal(&mut self, proposal_id: usize) {
+            // First, find the proposal
+            let mut proposal_option = None;
+            let mut bond_creator_address_option = None;
+            let mut target_xrd_amount_option = None;
+
+            for (_, inner_map) in &self.current_praposals {
+                if let Some(proposal) = inner_map.get(&proposal_id) {
+                    proposal_option = Some(proposal.clone());
+                    bond_creator_address_option = Some(proposal.get_address_issued_bonds());
+                    target_xrd_amount_option = Some(proposal.get_target_xrd_amount());
+                    break;
+                }
+            }
+
+            // If the proposal is found, execute it
+            if let (Some(proposal), Some(bond_creator_address), Some(target_xrd_amount)) = (
+                proposal_option,
+                bond_creator_address_option,
+                target_xrd_amount_option,
+            ) {
                 // Check if the treasury has enough XRD
                 let treasury_balance = self.shares.amount();
 
@@ -372,7 +464,6 @@ contributors: HashMap<ComponentAddress, Decimal>,
                 let payment = self.shares.take(target_xrd_amount);
 
                 // Call the purchase_bond function
-                // let (remaining, purchased_amt, purchased_bond_address) = self.purchase_bond(bond_creator_address, payment);
                 let remaining = self.purchase_bond(bond_creator_address, payment);
 
                 // Handle remaining funds and received bond NFT
@@ -380,8 +471,9 @@ contributors: HashMap<ComponentAddress, Decimal>,
 
                 let praposal_metadata = PraposalExecute {
                     praposal_address: proposal.address(),
+                    proposal_id
                     // purchased_bond_address,
-                    // purchased_amount : purchased_amt
+                    // purchased_amount: purchased_amt
                 };
 
                 let component_address = Runtime::global_address();
@@ -393,23 +485,35 @@ contributors: HashMap<ComponentAddress, Decimal>,
                     component_address,
                 });
 
-                self.current_praposal = None;
+                // Optionally, you can remove the executed proposal from the current proposals
+                for (_, inner_map) in &mut self.current_praposals {
+                    inner_map.remove(&proposal_id);
+                }
             } else {
-                
-                // assert!(false, "there is no current active proposal")
-                panic!("there is no current active proposal")
+                panic!("there is no current active proposal with the given ID");
             }
         }
 
-        //TODO: vote fn
-
-        pub fn vote(&mut self, token: Bucket, against: bool, account: Global<Account>) -> Bucket {
-
+        pub fn vote(
+            &mut self,
+            token: Bucket,
+            againsts: bool,
+            account: Global<Account>,
+            proposal_id: usize,
+        ) -> Bucket {
             let owner_role_of_voter = account.get_owner_role();
             Runtime::assert_access_rule(owner_role_of_voter.rule);
 
-            if let Some(proposal) = self.current_praposal {
+            // Find the proposal by proposal_id
+            let mut proposal_option = None;
+            for (_, inner_map) in &self.current_praposals {
+                if let Some(proposal) = inner_map.get(&proposal_id) {
+                    proposal_option = Some(proposal.clone());
+                    break;
+                }
+            }
 
+            if let Some(proposal) = proposal_option {
                 assert_eq!(
                     token.resource_address(),
                     self.dao_token_address,
@@ -432,8 +536,9 @@ contributors: HashMap<ComponentAddress, Decimal>,
                 let event_metadata = ProposalVote {
                     praposal_address: proposal.address(),
                     voting_amount: amount,
-                    againts: against,
-                    voter_address
+                    againts: againsts,
+                    voter_address,
+                    proposal_id
                 };
 
                 Runtime::emit_event(PandaoEvent {
@@ -443,16 +548,14 @@ contributors: HashMap<ComponentAddress, Decimal>,
                     meta_data: DaoEvent::PraposalVote(event_metadata),
                 });
 
-                let result = proposal.vote(token, against); 
+                let result = proposal.vote(token, againsts);
 
                 // Mark this voter as having voted
-                // vote_caster_addresses.insert(voter_address);
-
                 proposal.set_vote_caster_address(voter_address);
 
                 result
             } else {
-                assert!(false, "no active proposal");
+                assert!(false, "no active proposal with the given ID");
                 panic!();
             }
         }
@@ -514,9 +617,8 @@ contributors: HashMap<ComponentAddress, Decimal>,
         pub fn purchase_bond(
             &mut self,
             bond_creator_address: ComponentAddress,
-            payment: Bucket
-        ) -> Bucket{
-
+            payment: Bucket,
+        ) -> Bucket {
             assert!(
                 self.zero_coupon_bond.contains_key(&bond_creator_address),
                 "No bonds created by the specified address."
@@ -618,38 +720,42 @@ contributors: HashMap<ComponentAddress, Decimal>,
             result
         }
 
-        pub fn send_money_to_dao_treasury(&mut self, payment: Bucket, account: Global<Account>) -> Bucket {
+        pub fn send_money_to_dao_treasury(
+            &mut self,
+            payment: Bucket,
+            account: Global<Account>,
+        ) -> Bucket {
             // Ensure the payment is in XRD
             assert_eq!(
                 payment.resource_address(),
                 XRD,
                 "Only XRD tokens are accepted for treasury contributions"
             );
-    
+
             // Get the amount being sent
             let amount = payment.amount();
-    
+
             // Get the sender's address
             let sender_address = account.address();
-    
+
             // Store the payment in the dao_token vault
             self.dao_token.put(payment);
-    
+
             // Update the contributor's record
             self.update_contributor_record(sender_address, amount);
-    
+
             // Emit an event for the contribution
             self.emit_contribution_event(sender_address, amount);
-    
+
             // Return an empty bucket
             Bucket::new(XRD)
         }
-    
+
         // Helper method to update the contributor's record
         fn update_contributor_record(&mut self, address: ComponentAddress, amount: Decimal) {
             *self.contributors.entry(address).or_insert(Decimal::zero()) += amount;
         }
-    
+
         // Helper method to emit a contribution event
         fn emit_contribution_event(&self, address: ComponentAddress, amount: Decimal) {
             let event_metadata = TreasuryContribution {
@@ -657,7 +763,7 @@ contributors: HashMap<ComponentAddress, Decimal>,
                 amount: amount,
                 timestamp: Runtime::current_epoch().number(),
             };
-    
+
             Runtime::emit_event(PandaoEvent {
                 event_type: EventType::TREASURY_CONTRIBUTION,
                 dao_type: DaoType::TokenWeight,
@@ -665,16 +771,19 @@ contributors: HashMap<ComponentAddress, Decimal>,
                 meta_data: DaoEvent::TreasuryContribution(event_metadata),
             });
         }
-    
+
         // Method to get all contributors and their total contributions
         pub fn get_all_contributors(&self) -> HashMap<ComponentAddress, Decimal> {
             self.contributors.clone()
         }
 
-        pub fn update_bond_vault_and_store(&mut self, desired_bond : Bucket){
-            let desired_resource_address : ResourceAddress = desired_bond.resource_address();
-            if !self.bonds.contains_key(&desired_resource_address){
-                self.bonds.insert(desired_resource_address, Vault::new(desired_resource_address));
+        pub fn update_bond_vault_and_store(&mut self, desired_bond: Bucket) {
+            let desired_resource_address: ResourceAddress = desired_bond.resource_address();
+            if !self.bonds.contains_key(&desired_resource_address) {
+                self.bonds.insert(
+                    desired_resource_address,
+                    Vault::new(desired_resource_address),
+                );
             }
             //Get the vault for desired bond type
             let vault = self.bonds.get_mut(&desired_resource_address).unwrap();
@@ -683,19 +792,17 @@ contributors: HashMap<ComponentAddress, Decimal>,
             // desired_bond
         }
 
-
-
-        pub fn execute_proposal_for_pandao(&mut self){
-            match self.current_praposal{
-                Some(current_proposal) =>{
-                    //earlier execute proposal was not taking any action but it was made to take action in financial dao case
-                    println!("your proposal is executed successfully");
-                    self.current_praposal = None;
-                },
-                // None => println!("there is not any proposal created")
-                None => assert!(false, "there is no any created proposal")            
-            }   
-        }
+        // pub fn execute_proposal_for_pandao(&mut self){
+        //     match self.current_praposal{
+        //         Some(current_proposal) =>{
+        //             //earlier execute proposal was not taking any action but it was made to take action in financial dao case
+        //             println!("your proposal is executed successfully");
+        //             self.current_praposal = None;
+        //         },
+        //         // None => println!("there is not any proposal created")
+        //         None => assert!(false, "there is no any created proposal")
+        //     }
+        // }
     }
 }
 

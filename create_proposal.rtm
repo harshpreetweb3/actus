@@ -1,40 +1,32 @@
 CALL_METHOD
-Address("component_tdx_2_1crnceyfxq7rfl8pvjsx8678cw90xn8wurwzrxa5kqw2a46damwm2cx")
-"create_praposal"
-"Token Price"
-"Should we increase token price?"
-5u8
-Tuple(
-2024u32 ,
-9u8 ,
-9u8 ,
-20u8 ,
-22u8 ,
-22u8)
-Tuple(
-2024u32 ,
-9u8 ,
-12u8 ,
-1u8 ,
-1u8 ,
-1u8)
-Enum<1u8>(
-Address("account_tdx_2_128e6fmjkhjqx0n8h9562rrvstl883wq22pzea4ucnnx0762ptlch4s")
-)
-Enum<1u8>(
-Decimal("40")
-)
+  Address("component_tdx_2_1cq8x7tkug4sdwu2trmrfn3wtxshhdfuw88udnvxz34am248c49n46y")
+  "create_praposal"
+  "new"
+  "new"
+  2u8
+  Tuple(
+    2024u32,
+    10u8,
+    13u8,
+    20u8,
+    22u8,
+    22u8
+  )
+  Tuple(
+    2024u32,
+    11u8,
+    13u8,
+    1u8,
+    1u8,
+    1u8
+  )
+  Enum<1u8>(
+    Address("account_tdx_2_1285pq36tg53usvdhvwjlu40plmzf6dj8uyhrqxp6j0kvpl2znqtt54")
+  )
+  Enum<1u8>(
+    Decimal("20")
+  )
+  Enum<1u8>(
+    Address("account_tdx_2_128e6fmjkhjqx0n8h9562rrvstl883wq22pzea4ucnnx0762ptlch4s")
+  )
 ;
-
-
-
-
-
-
-
-
-
-
-
-
-

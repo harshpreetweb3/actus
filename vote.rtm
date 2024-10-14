@@ -1,22 +1,23 @@
 CALL_METHOD
              Address("account_tdx_2_128e6fmjkhjqx0n8h9562rrvstl883wq22pzea4ucnnx0762ptlch4s")
              "withdraw"
-             Address("resource_tdx_2_1thnt9xke7m6vmjqp9clgz75z2hsz2h4pm8yk8w70nh8k7w8twwwyf4")
+             Address("resource_tdx_2_1t5xuvxdz8ejn7jj76lpxne8u5e2j7aj9rth77y0ld22a8g2hxr9t4k")
              Decimal("1")
          ;
 
 TAKE_FROM_WORKTOP
-             Address("resource_tdx_2_1thnt9xke7m6vmjqp9clgz75z2hsz2h4pm8yk8w70nh8k7w8twwwyf4")
+             Address("resource_tdx_2_1t5xuvxdz8ejn7jj76lpxne8u5e2j7aj9rth77y0ld22a8g2hxr9t4k")
              Decimal("1")
              Bucket("bucket1")
          ;
 
 CALL_METHOD
-             Address("component_tdx_2_1crnceyfxq7rfl8pvjsx8678cw90xn8wurwzrxa5kqw2a46damwm2cx")
+             Address("component_tdx_2_1cq8x7tkug4sdwu2trmrfn3wtxshhdfuw88udnvxz34am248c49n46y")
              "vote"
              Bucket("bucket1")
              true
              Address("account_tdx_2_128e6fmjkhjqx0n8h9562rrvstl883wq22pzea4ucnnx0762ptlch4s")
+             43360u64
          ;
 
 CALL_METHOD

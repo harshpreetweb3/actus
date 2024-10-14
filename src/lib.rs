@@ -379,7 +379,7 @@ mod radixdao {
             (global_proposal_component, message)
         }
 
-        fn get_created_proposals(
+        pub fn get_created_proposals(
             &self,
             your_address: ComponentAddress,
         ) -> Result<HashMap<usize, Global<TokenWeightProposal>>, String> {
@@ -393,7 +393,7 @@ mod radixdao {
             }
         }
 
-        fn get_proposal_using_proposal_id(
+        pub fn get_proposal_using_proposal_id(
             &self,
             proposal_id: usize,
         ) -> Result<Global<TokenWeightProposal>, String> {
@@ -407,7 +407,7 @@ mod radixdao {
             return Err(format!("proposal with id : {proposal_id} not found"));
         }
 
-        fn get_all_proposals(&self) -> Vec<Global<TokenWeightProposal>> {
+        pub fn get_all_proposals(&self) -> Vec<Global<TokenWeightProposal>> {
             let mut all_proposals: Vec<Global<TokenWeightProposal>> = Vec::new();
             for (_, inner_map) in &self.current_praposals {
                 for (_, proposal) in inner_map {
@@ -785,11 +785,8 @@ mod radixdao {
                     Vault::new(desired_resource_address),
                 );
             }
-            //Get the vault for desired bond type
             let vault = self.bonds.get_mut(&desired_resource_address).unwrap();
-            // let collected_dersired_bond : Bucket = desired_bond.take(desired_bond.amount());
             vault.put(desired_bond);
-            // desired_bond
         }
 
         // pub fn execute_proposal_for_pandao(&mut self){

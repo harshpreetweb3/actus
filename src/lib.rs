@@ -349,7 +349,7 @@ mod radixdao {
                 .current_praposals
                 .entry(proposal_creator_address.unwrap())
                 .or_insert_with(HashMap::new);
-            
+
             inner_map.insert(proposal_id, global_proposal_component);
 
             let praposal_metadata = PraposalMetadata {
@@ -452,6 +452,24 @@ mod radixdao {
                 bond_creator_address_option,
                 target_xrd_amount_option,
             ) {
+
+                // let current_epoch = Runtime::current_epoch();
+                // let current_time_seconds = current_epoch.number() as i64;
+                let now : Instant = Clock::current_time_rounded_to_seconds();
+                let current_time_seconds : i64 = now.seconds_since_unix_epoch;
+
+                let last_time = proposal.get_last_time();
+                let end_time_seconds = last_time.to_instant().seconds_since_unix_epoch;
+
+                // Debug statements to verify the times
+                println!("Current time (epoch seconds): {}", current_time_seconds);
+                println!("Proposal end time (epoch seconds): {}", end_time_seconds);
+
+                assert!(
+                    current_time_seconds > end_time_seconds,
+                    "Proposal can only be executed after the specified end time"
+                );
+
                 // Check if the treasury has enough XRD
                 let treasury_balance = self.shares.amount();
 
@@ -471,9 +489,8 @@ mod radixdao {
 
                 let praposal_metadata = PraposalExecute {
                     praposal_address: proposal.address(),
-                    proposal_id
-                    // purchased_bond_address,
-                    // purchased_amount: purchased_amt
+                    proposal_id, // purchased_bond_address,
+                                 // purchased_amount: purchased_amt
                 };
 
                 let component_address = Runtime::global_address();
@@ -538,7 +555,7 @@ mod radixdao {
                     voting_amount: amount,
                     againts: againsts,
                     voter_address,
-                    proposal_id
+                    proposal_id,
                 };
 
                 Runtime::emit_event(PandaoEvent {

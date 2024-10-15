@@ -132,5 +132,9 @@ mod pandao_praposal {
             self.vote_caster_addresses.insert(address);
         }
 
+        pub fn get_last_time(&self) -> scrypto::time::UtcDateTime {
+            self.end_time.clone()
+        }
+
     }
 }

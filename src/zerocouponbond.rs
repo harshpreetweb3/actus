@@ -143,6 +143,7 @@ mod zerocouponbond {
         // }
 
         pub fn check_the_maturity_of_bonds(&self) -> i64 {
+            
             let current_epoch = Runtime::current_epoch().number();
             let seconds_in_day = 24 * 60 * 60;
             let days_left = (self.maturity_date as i64 - current_epoch as i64) / seconds_in_day;

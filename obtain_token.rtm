@@ -12,7 +12,7 @@
          ;
 
  CALL_METHOD
-         Address("component_tdx_2_1cq8x7tkug4sdwu2trmrfn3wtxshhdfuw88udnvxz34am248c49n46y")
+         Address("component_tdx_2_1crw6jl9q373eezand28fvhx5lx77zcms5lz0xgsvclv423fdw9jwdf")
          "obtain_community_token"
          Bucket("bucket1")
          Decimal("2")

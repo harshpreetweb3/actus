@@ -37,7 +37,8 @@ mod pandao_praposal {
         pub address_issued_bonds_to_sell : Option<ComponentAddress>,
         pub target_xrd_amount: Option<Decimal>,
         pub vote_caster_addresses : HashSet<ComponentAddress>,
-        pub proposal_creator_address : Option<ComponentAddress>       
+        pub proposal_creator_address : Option<ComponentAddress>,
+        amount_of_tokens_should_be_minted : Option<usize>     
     }
 
     impl TokenWeightProposal  {
@@ -52,7 +53,8 @@ mod pandao_praposal {
             voter_badge_address: ResourceAddress,
             address_issued_bonds_to_sell : Option<ComponentAddress>,
             target_xrd_amount : Option<Decimal>,
-            proposal_creator_address : Option<ComponentAddress>
+            proposal_creator_address : Option<ComponentAddress>,
+            amount_of_tokens_should_be_minted : Option<usize>
         ) -> (Global<TokenWeightProposal >, GlobalAddressReservation) {
             
             let (address_reservation, _) =
@@ -71,7 +73,8 @@ mod pandao_praposal {
                 address_issued_bonds_to_sell,
                 target_xrd_amount,
                 vote_caster_addresses : HashSet::new(),
-                proposal_creator_address
+                proposal_creator_address,
+                amount_of_tokens_should_be_minted
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::None)
@@ -134,6 +137,10 @@ mod pandao_praposal {
 
         pub fn get_last_time(&self) -> scrypto::time::UtcDateTime {
             self.end_time.clone()
+        }
+
+        pub fn get_token_mint_amount(&self) -> Option<usize> {
+            self.amount_of_tokens_should_be_minted
         }
 
     }

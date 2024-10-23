@@ -81,7 +81,9 @@ pub struct PraposalMetadata {
     pub component_address: ComponentAddress, // votes:HashMap<Address,Decimal>
     pub address_issued_bonds_to_sell : Option<ComponentAddress>,
     pub target_xrd_amount : Option<Decimal>,
-    pub proposal_creator_address : Option<ComponentAddress>
+    pub proposal_creator_address : Option<ComponentAddress>,
+    pub amount_of_tokens_should_be_minted : Option<usize>,
+    pub proposal_id : usize
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]

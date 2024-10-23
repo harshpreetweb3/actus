@@ -4,7 +4,7 @@ CALL_METHOD
     Decimal("5000")
 ;
 CALL_FUNCTION
-    Address("package_tdx_2_1pkmky2x0mqvmwwzp2h64wfew8e28khqd777dvnzmzv6jvzpmg9s4pw")
+    Address("package_tdx_2_1p5lqen3xee7hg249qc2jfkxsqzfcdhaj96az4enxjfk5jrjz8xfl4l")
     "TokenWeigtedDao"
     "initiate"
     "Investment DAO"

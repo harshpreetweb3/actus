@@ -26,6 +26,8 @@ mod radixdao {
         // current_praposal: Option<Global<TokenWeightProposal>>,
         current_praposals: HashMap<ComponentAddress, HashMap<usize, Global<TokenWeightProposal>>>,
 
+        dao_token_resource_manager : ResourceManager,
+
         dao_token: Vault,
 
         organization_name: String,
@@ -45,7 +47,7 @@ mod radixdao {
         // Add ZeroCouponBond component
         zero_coupon_bond: HashMap<ComponentAddress, Vec<Global<ZeroCouponBond>>>,
 
-        contributors: HashMap<ComponentAddress, Decimal>,
+        contributors: HashMap<ComponentAddress, Decimal>
     }
 
     impl TokenWeigtedDao {
@@ -137,6 +139,8 @@ mod radixdao {
 
                 current_praposals: HashMap::new(),
 
+                dao_token_resource_manager : voting_power_tokens.resource_manager(),
+
                 dao_token: Vault::with_bucket(voting_power_tokens),
 
                 buy_back_price: token_buy_back_price.clone(),
@@ -148,7 +152,7 @@ mod radixdao {
                 // Initialize zero_coupon_bond as None
                 zero_coupon_bond: HashMap::new(),
 
-                contributors: HashMap::new(),
+                contributors: HashMap::new()
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
@@ -308,7 +312,7 @@ mod radixdao {
             end_time: scrypto::time::UtcDateTime,
             address_issued_bonds_to_sell: Option<ComponentAddress>,
             target_xrd_amount: Option<Decimal>,
-            proposal_creator_address: Option<ComponentAddress>, // new argument
+            proposal_creator_address: Option<ComponentAddress>
         ) -> (
             Global<crate::proposal::pandao_praposal::TokenWeightProposal>,
             String,
@@ -322,6 +326,8 @@ mod radixdao {
                 );
             }
 
+            let amount_of_tokens_should_be_minted = None;
+
             let (global_proposal_component, _) = TokenWeightProposal::new(
                 title.clone(),
                 description.clone(),
@@ -333,6 +339,7 @@ mod radixdao {
                 address_issued_bonds_to_sell.clone(),
                 target_xrd_amount.clone(),
                 proposal_creator_address,
+                amount_of_tokens_should_be_minted
             );
 
             // global_proposal_component.callme("string".into()) ;
@@ -363,6 +370,8 @@ mod radixdao {
                 address_issued_bonds_to_sell,
                 target_xrd_amount,
                 proposal_creator_address,
+                amount_of_tokens_should_be_minted,
+                proposal_id
             };
             let component_address = Runtime::global_address();
 
@@ -817,6 +826,133 @@ mod radixdao {
         //         None => assert!(false, "there is no any created proposal")
         //     }
         // }
+
+        pub fn create_proposal_to_mint_more_dao_tokens(
+            &mut self, 
+            title: String, 
+            description : String, 
+            minimun_quorum: u8,
+            amount_of_tokens_should_be_minted : Option<usize>, 
+            start_time: scrypto::time::UtcDateTime,
+            end_time: scrypto::time::UtcDateTime,  
+            proposal_creator_address : Option<ComponentAddress>
+        )
+
+        -> (
+            Global<crate::proposal::pandao_praposal::TokenWeightProposal>,
+            String
+        )
+
+        {
+        
+            let address_issued_bonds_to_sell = None;
+            let target_xrd_amount = None;
+
+            let (global_proposal_component, _) = TokenWeightProposal::new(
+                title.clone(),
+                description.clone(),
+                minimun_quorum,
+                start_time,
+                end_time,
+                self.owner_token_addresss.clone(),
+                self.dao_token_address.clone(),
+                address_issued_bonds_to_sell.clone(),
+                target_xrd_amount.clone(),
+                proposal_creator_address,
+                amount_of_tokens_should_be_minted
+            );
+
+            let proposal_id : usize = Self::get_proposal_id().try_into().expect("couldn't get called successfully");
+
+            let inner_map = self.current_praposals.entry(proposal_creator_address.unwrap()).or_insert_with(HashMap::new);
+
+            inner_map.insert(proposal_id, global_proposal_component);
+
+            let start_time_s = start_time.to_instant().seconds_since_unix_epoch;
+            let end_time_s = end_time.to_instant().seconds_since_unix_epoch;
+
+            let proposal_metadata = PraposalMetadata{
+                title,
+                description,
+                minimum_quorum: minimun_quorum.into(),
+                start_time_ts: start_time_s,
+                end_time_ts : end_time_s,
+                owner_token_address: self.owner_token_addresss.clone(),
+                component_address: global_proposal_component.address(),
+                address_issued_bonds_to_sell,
+                target_xrd_amount,
+                proposal_creator_address,
+                amount_of_tokens_should_be_minted,
+                proposal_id
+            };
+
+            let component_address = Runtime::global_address();
+
+            Runtime::emit_event(PandaoEvent {
+                event_type: EventType::PRAPOSAL,
+                dao_type: DaoType::TokenWeight,
+                meta_data: DaoEvent::PraposalDeployment(proposal_metadata),
+                component_address
+            });
+
+            let mut message = String::new();
+            message = format!("Proposal created with id : {}", proposal_id);
+
+            (global_proposal_component, message)
+
+        }
+
+        pub fn mint_more_tokens(&mut self, token_number_to_mint : usize){
+            self.dao_token.put(self.dao_token_resource_manager.mint(token_number_to_mint));
+        }
+
+        pub fn execute_proposal_to_mint_more_tokens(&mut self, proposal_id : usize) -> Result<String, String> {
+
+            for (_, inner_map) in &self.current_praposals {
+
+                let proposal = inner_map.get(&proposal_id);
+
+
+                
+                let now : Instant = Clock::current_time_rounded_to_seconds();
+                let current_time_seconds : i64 = now.seconds_since_unix_epoch;
+
+                let last_time = proposal.unwrap().get_last_time();
+                let end_time_seconds = last_time.to_instant().seconds_since_unix_epoch;
+
+                // Debug statements to verify the times
+                println!("Current time (epoch seconds): {}", current_time_seconds);
+                println!("Proposal end time (epoch seconds): {}", end_time_seconds);
+
+                assert!(
+                    current_time_seconds > end_time_seconds,
+                    "Proposal can only be executed after the specified end time"
+                );
+
+
+                
+
+                match proposal {
+                    Some(proposal) => {
+                        if let Some(how_much_amount) = proposal.get_token_mint_amount(){
+
+                            &self.mint_more_tokens(how_much_amount);
+
+                            let message = "proposal executed successfully".to_string();
+
+                            return Ok(message)
+
+                        }else{
+                            return Err(format!("token_mint_amount is not present in a proposal with id : {proposal_id} and it seems not to be a proposal to mint more tokens"));
+                        }
+                    },
+                    None => {
+                        return Err(format!("proposal with id : {proposal_id} not found"))
+                    }
+                }
+            }
+            return Err(format!("proposal with id : {proposal_id} not found"));
+        }
     }
 }
 

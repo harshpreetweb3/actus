@@ -1,0 +1,29 @@
+CALL_METHOD
+  Address("component_tdx_2_1cqcm9jl3agcgs6g5t908jxfrymtxtlagak3m6mtpa2tkjy3mp0u4vv")
+  "create_proposal_to_mint_more_dao_tokens"
+  "mint GOVERNANCE tokens"
+  "we need some more GOVERNANCE TOKENS"
+  1u8
+  Enum<1u8>(
+    30u64
+  )
+  Tuple(
+    2024u32,
+    10u8,
+    21u8,
+    1u8,
+    1u8,
+    1u8
+  )
+  Tuple(
+    2024u32,
+    10u8,
+    22u8,
+    1u8,
+    1u8,
+    1u8
+  )
+  Enum<1u8>(
+    Address("account_tdx_2_128e6fmjkhjqx0n8h9562rrvstl883wq22pzea4ucnnx0762ptlch4s")
+  )
+;

@@ -121,6 +121,12 @@ mod radixdao {
                     "organization name" => organization_name.as_str() , locked ;
                     "icon_url" => Url::of(&power_token_url), locked;
                 }))
+                // adding minting rules allows the minting of more gumballs
+                .mint_roles(mint_roles! {
+                    // A good minting rule is described in example 08
+                    minter => rule!(allow_all); // DON'T DO THIS IN PRODUCTION!
+                    minter_updater => rule!(deny_all);
+                })
                 .mint_initial_supply(token_supply)
                 .into();
 
@@ -498,8 +504,7 @@ mod radixdao {
 
                 let praposal_metadata = PraposalExecute {
                     praposal_address: proposal.address(),
-                    proposal_id, // purchased_bond_address,
-                                 // purchased_amount: purchased_amt
+                    proposal_id
                 };
 
                 let component_address = Runtime::global_address();

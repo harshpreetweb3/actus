@@ -47,7 +47,9 @@ mod radixdao {
         // Add ZeroCouponBond component
         zero_coupon_bond: HashMap<ComponentAddress, Vec<Global<ZeroCouponBond>>>,
 
-        contributors: HashMap<ComponentAddress, Decimal>
+        contributors: HashMap<ComponentAddress, Decimal>,
+
+        proposal_creation_right : ProposalCreationRight
     }
 
     impl TokenWeigtedDao {
@@ -79,6 +81,9 @@ mod radixdao {
             tags: Vec<String>,
 
             purpose: String,
+
+            proposal_creation_right : ProposalCreationRight
+
         ) -> (Global<TokenWeigtedDao>, Bucket) {
             // reserve an address for the DAO component
             let (address_reservation, _) =
@@ -152,7 +157,9 @@ mod radixdao {
                 // Initialize zero_coupon_bond as None
                 zero_coupon_bond: HashMap::new(),
 
-                contributors: HashMap::new()
+                contributors: HashMap::new(),
+
+                proposal_creation_right
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
@@ -187,7 +194,7 @@ mod radixdao {
 
                 tags: tags.clone(),
 
-                purpose: purpose.clone(),
+                purpose: purpose.clone()
             };
 
             // emit event | event emission
@@ -312,11 +319,61 @@ mod radixdao {
             end_time: scrypto::time::UtcDateTime,
             address_issued_bonds_to_sell: Option<ComponentAddress>,
             target_xrd_amount: Option<Decimal>,
-            proposal_creator_address: Option<ComponentAddress>
+            proposal_creator_address: Option<ComponentAddress>,
+            governance_token_or_owner_token_address : Bucket,
+            voting_type: VotingType
         ) -> (
             Global<crate::proposal::pandao_praposal::TokenWeightProposal>,
             String,
+            Bucket
         ) {
+            //implement proposal creation rights
+            match self.proposal_creation_right{
+
+                ProposalCreationRight::EVERYONE => {
+
+                    assert_eq!(
+                        governance_token_or_owner_token_address.resource_address(),
+                        self.dao_token_address,
+                        "wrong voting token supplied! please make sure that you supply DAO Governance Token"
+                    );
+
+                    assert!(
+                        governance_token_or_owner_token_address.amount() >= Decimal::one(),
+                        "Proposal creator must have at least one governance token to create a proposal"
+                    );
+
+                    //allow proposal creation
+                }
+                ProposalCreationRight::TOKEN_HOLDER_THRESHOLD(threshold) =>{
+
+                    assert_eq!(
+                        governance_token_or_owner_token_address.resource_address(),
+                        self.dao_token_address,
+                        "wrong voting token supplied! please make sure that you supply DAO Governance Token"
+                    );
+
+                    assert!(
+                        governance_token_or_owner_token_address.amount() >= threshold,
+                        "Proposal creator does not have enough tokens to meet the threshold"
+                    );
+                }
+                ProposalCreationRight::ADMIN => {
+
+                    assert_eq!(
+                        governance_token_or_owner_token_address.resource_address(),
+                        self.owner_token_addresss,
+                        "Only the admin can create a proposal and If you are an Admin please make sure you pass OWNER TOKEN ADDRESS"
+                    );
+
+                    assert!(
+                        governance_token_or_owner_token_address.amount() >= Decimal::one(),
+                        "ADMIN must pass his/her OWNER TOKEN to create proposal"
+                    );
+                }
+
+            }
+
             use crate::proposal::pandao_praposal::TokenWeightProposal;
 
             if let Some(address_selling_bonds) = address_issued_bonds_to_sell {
@@ -339,7 +396,8 @@ mod radixdao {
                 address_issued_bonds_to_sell.clone(),
                 target_xrd_amount.clone(),
                 proposal_creator_address,
-                amount_of_tokens_should_be_minted
+                amount_of_tokens_should_be_minted,
+                voting_type
             );
 
             // global_proposal_component.callme("string".into()) ;
@@ -371,7 +429,8 @@ mod radixdao {
                 target_xrd_amount,
                 proposal_creator_address,
                 amount_of_tokens_should_be_minted,
-                proposal_id
+                proposal_id,
+                governance_token_or_owner_token_address : governance_token_or_owner_token_address.resource_address()
             };
             let component_address = Runtime::global_address();
 
@@ -385,7 +444,7 @@ mod radixdao {
             let mut message = String::new();
             message = format!("Proposal created with id : {}", proposal_id);
 
-            (global_proposal_component, message)
+            (global_proposal_component, message, governance_token_or_owner_token_address)
         }
 
         pub fn get_created_proposals(
@@ -835,15 +894,65 @@ mod radixdao {
             amount_of_tokens_should_be_minted : Option<usize>, 
             start_time: scrypto::time::UtcDateTime,
             end_time: scrypto::time::UtcDateTime,  
-            proposal_creator_address : Option<ComponentAddress>
+            proposal_creator_address : Option<ComponentAddress>,
+            governance_token_or_owner_token_address : Bucket,
+            voting_type: VotingType
         )
 
         -> (
             Global<crate::proposal::pandao_praposal::TokenWeightProposal>,
-            String
+            String, 
+            Bucket
         )
 
         {
+
+            match self.proposal_creation_right{
+
+                ProposalCreationRight::EVERYONE => {
+
+                    assert_eq!(
+                        governance_token_or_owner_token_address.resource_address(),
+                        self.dao_token_address,
+                        "wrong voting token supplied! please make sure that you supply DAO Governance Token"
+                    );
+
+                    assert!(
+                        governance_token_or_owner_token_address.amount() >= Decimal::one(),
+                        "Proposal creator must have at least one governance token to create a proposal"
+                    );
+
+                    //allow proposal creation
+                }
+                ProposalCreationRight::TOKEN_HOLDER_THRESHOLD(threshold) =>{
+
+                    assert_eq!(
+                        governance_token_or_owner_token_address.resource_address(),
+                        self.dao_token_address,
+                        "wrong voting token supplied! please make sure that you supply DAO Governance Token"
+                    );
+
+                    assert!(
+                        governance_token_or_owner_token_address.amount() >= threshold,
+                        "Proposal creator does not have enough tokens to meet the threshold"
+                    );
+                }
+                ProposalCreationRight::ADMIN => {
+
+                    assert_eq!(
+                        governance_token_or_owner_token_address.resource_address(),
+                        self.owner_token_addresss,
+                        "Only the admin can create a proposal and If you are an Admin please make sure you pass OWNER TOKEN ADDRESS"
+                    );
+
+                    assert!(
+                        governance_token_or_owner_token_address.amount() >= Decimal::one(),
+                        "ADMIN must pass his/her OWNER TOKEN to create proposal"
+                    );
+                }
+
+            }
+
         
             let address_issued_bonds_to_sell = None;
             let target_xrd_amount = None;
@@ -859,7 +968,8 @@ mod radixdao {
                 address_issued_bonds_to_sell.clone(),
                 target_xrd_amount.clone(),
                 proposal_creator_address,
-                amount_of_tokens_should_be_minted
+                amount_of_tokens_should_be_minted,
+                voting_type
             );
 
             let proposal_id : usize = Self::get_proposal_id().try_into().expect("couldn't get called successfully");
@@ -883,7 +993,8 @@ mod radixdao {
                 target_xrd_amount,
                 proposal_creator_address,
                 amount_of_tokens_should_be_minted,
-                proposal_id
+                proposal_id,
+                governance_token_or_owner_token_address : governance_token_or_owner_token_address.resource_address()
             };
 
             let component_address = Runtime::global_address();
@@ -898,7 +1009,9 @@ mod radixdao {
             let mut message = String::new();
             message = format!("Proposal created with id : {}", proposal_id);
 
-            (global_proposal_component, message)
+
+
+            (global_proposal_component, message, governance_token_or_owner_token_address)
 
         }
 

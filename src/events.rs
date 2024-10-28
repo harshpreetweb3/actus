@@ -52,7 +52,9 @@ pub struct TokenWightedDeployment {
 
     pub tags : Vec<String>,
 
-    pub purpose : String
+    pub purpose : String,
+
+    // pub proposal_creation_right : ProposalCreationRight
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
@@ -83,7 +85,8 @@ pub struct PraposalMetadata {
     pub target_xrd_amount : Option<Decimal>,
     pub proposal_creator_address : Option<ComponentAddress>,
     pub amount_of_tokens_should_be_minted : Option<usize>,
-    pub proposal_id : usize
+    pub proposal_id : usize,
+    pub governance_token_or_owner_token_address : ResourceAddress
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
@@ -145,4 +148,19 @@ pub struct TreasuryContribution {
     pub contributor: ComponentAddress,
     pub amount: Decimal,
     pub timestamp: u64,
+}
+
+#[allow(non_camel_case_types)]
+#[derive(ScryptoSbor, Clone, Debug, PartialEq, Eq)]
+pub enum ProposalCreationRight {
+    EVERYONE,
+    TOKEN_HOLDER_THRESHOLD(Decimal),
+    ADMIN,
+}
+
+#[allow(non_camel_case_types)]
+#[derive(ScryptoSbor, Clone, Debug, PartialEq, Eq)]
+pub enum VotingType {
+    ResourceHold,
+    Equality,
 }

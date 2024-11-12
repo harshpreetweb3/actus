@@ -51,6 +51,8 @@ package_tdx_2_1pkrvjd9qja3c9wc8tcy627jgqs04gu2p66ft5ad5gaywrqfx88ef22
 package_tdx_2_1p5uspwme0r98nr0w4vn45umnfzfvf3l536qzwfjac7kn90lklaay87
 package_tdx_2_1pkmky2x0mqvmwwzp2h64wfew8e28khqd777dvnzmzv6jvzpmg9s4pw
 package_tdx_2_1p5lqen3xee7hg249qc2jfkxsqzfcdhaj96az4enxjfk5jrjz8xfl4l
+package_tdx_2_1phtlqgv3ehsxvpz93cuxyxeya4hn09lplf8ayhnu23xkdnsq0lrjtt
+package_tdx_2_1pkca6mvy254f9drzjqwttrmlm9hnz4zuqy93mun89n0jpx3gn4n87z
 ```
 
 ## account_used:
@@ -83,3 +85,13 @@ component_tdx_2_1cqld9hugvz3fxfp4r63mqf83lu572rgjsqyav3u3cq00x5vuz0h95m
 component_tdx_2_1crdrfg6emdtnegs7x2efz0tft4matruf78kklm6e5l9qgy35nnqtem
 ```
 
+
+## community address for everyone
+```
+component_tdx_2_1cpvq9v87uexrpt6cusuw3ztf8p6nplpg3ck7uf3sakaeyu5hfxlcc5
+```
+
+## community address for TOKEN_THRESHOLD
+```
+component_tdx_2_1czfh46hzkk4ggyxv5xhuc95at7l98hyq6m93r0lm6ev7sggqga7z30
+```

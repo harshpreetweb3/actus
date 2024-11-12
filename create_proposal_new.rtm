@@ -1,0 +1,54 @@
+ CALL_METHOD
+             Address("account_tdx_2_128e6fmjkhjqx0n8h9562rrvstl883wq22pzea4ucnnx0762ptlch4s")
+             "withdraw"
+             Address("resource_tdx_2_1tkqe55pdftn0x4f0yfqaa98dyaz0w9njxt0t6cuqld4h46x3gufrlv")
+             Decimal("1")
+         ;
+
+ TAKE_FROM_WORKTOP
+             Address("resource_tdx_2_1tkqe55pdftn0x4f0yfqaa98dyaz0w9njxt0t6cuqld4h46x3gufrlv")
+             Decimal("1")
+             Bucket("bucket1")
+         ;
+
+CALL_METHOD
+    Address("component_tdx_2_1cr90lkp6zevvzfpwq2mjua3uq3s0pzts9cq6hm046ffacepflddzte")
+    "create_praposal"
+    "new"
+    "new"
+    2u8
+    Tuple(
+      2024u32,
+      10u8,
+      13u8,
+      20u8,
+      22u8,
+      22u8
+    )
+    Tuple(
+      2024u32,
+      11u8,
+      13u8,
+      1u8,
+      1u8,
+      1u8
+    )
+    Enum<1u8>(
+      Address("account_tdx_2_128e6fmjkhjqx0n8h9562rrvstl883wq22pzea4ucnnx0762ptlch4s")
+    )
+    Enum<1u8>(
+      Decimal("40")
+    )
+    Enum<1u8>(
+      Address("account_tdx_2_128e6fmjkhjqx0n8h9562rrvstl883wq22pzea4ucnnx0762ptlch4s")
+    )
+    Bucket("bucket1")
+    Enum<1u8>()
+  ;
+
+  CALL_METHOD
+    Address("account_tdx_2_128e6fmjkhjqx0n8h9562rrvstl883wq22pzea4ucnnx0762ptlch4s")
+    "try_deposit_batch_or_refund"
+    Expression("ENTIRE_WORKTOP")
+    Enum<0u8>()
+;

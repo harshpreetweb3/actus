@@ -26,7 +26,7 @@ mod radixdao {
         // current_praposal: Option<Global<TokenWeightProposal>>,
         current_praposals: HashMap<ComponentAddress, HashMap<usize, Global<TokenWeightProposal>>>,
 
-        dao_token_resource_manager : ResourceManager,
+        dao_token_resource_manager: ResourceManager,
 
         dao_token: Vault,
 
@@ -49,7 +49,7 @@ mod radixdao {
 
         contributors: HashMap<ComponentAddress, Decimal>,
 
-        proposal_creation_right : ProposalCreationRight
+        proposal_creation_right: ProposalCreationRight,
     }
 
     impl TokenWeigtedDao {
@@ -82,8 +82,7 @@ mod radixdao {
 
             purpose: String,
 
-            proposal_creation_right : ProposalCreationRight
-
+            proposal_creation_right: ProposalCreationRight,
         ) -> (Global<TokenWeigtedDao>, Bucket) {
             // reserve an address for the DAO component
             let (address_reservation, _) =
@@ -133,80 +132,312 @@ mod radixdao {
 
             let owner_token_addresss = owner_badge.resource_address();
 
-            let component = Self {
-                token_price: token_price.clone(),
+            let component: Global<TokenWeigtedDao>;
 
-                organization_name: organization_name.clone(),
+            match proposal_creation_right {
+                ProposalCreationRight::EVERYONE => {
+                    component = Self {
+                        token_price: token_price.clone(),
 
-                dao_token_address: dao_token_address.clone(),
+                        organization_name: organization_name.clone(),
 
-                owner_token_addresss: owner_token_addresss.clone(),
+                        dao_token_address: dao_token_address.clone(),
 
-                current_praposals: HashMap::new(),
+                        owner_token_addresss: owner_token_addresss.clone(),
 
-                dao_token_resource_manager : voting_power_tokens.resource_manager(),
+                        current_praposals: HashMap::new(),
 
-                dao_token: Vault::with_bucket(voting_power_tokens),
+                        dao_token_resource_manager: voting_power_tokens.resource_manager(),
 
-                buy_back_price: token_buy_back_price.clone(),
+                        dao_token: Vault::with_bucket(voting_power_tokens),
 
-                shares: Vault::new(XRD),
+                        buy_back_price: token_buy_back_price.clone(),
 
-                bonds: HashMap::new(),
+                        shares: Vault::new(XRD),
 
-                // Initialize zero_coupon_bond as None
-                zero_coupon_bond: HashMap::new(),
+                        bonds: HashMap::new(),
 
-                contributors: HashMap::new(),
+                        // Initialize zero_coupon_bond as None
+                        zero_coupon_bond: HashMap::new(),
 
-                proposal_creation_right
+                        contributors: HashMap::new(),
+
+                        proposal_creation_right: ProposalCreationRight::EVERYONE,
+                    }
+                    .instantiate()
+                    .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
+                        owner_token_addresss.clone()
+                    ))))
+                    .with_address(address_reservation.clone())
+                    .globalize();
+                }
+                ProposalCreationRight::TOKEN_HOLDER_THRESHOLD(threshold) => {
+                    component = Self {
+                        token_price: token_price.clone(),
+
+                        organization_name: organization_name.clone(),
+
+                        dao_token_address: dao_token_address.clone(),
+
+                        owner_token_addresss: owner_token_addresss.clone(),
+
+                        current_praposals: HashMap::new(),
+
+                        dao_token_resource_manager: voting_power_tokens.resource_manager(),
+
+                        dao_token: Vault::with_bucket(voting_power_tokens),
+
+                        buy_back_price: token_buy_back_price.clone(),
+
+                        shares: Vault::new(XRD),
+
+                        bonds: HashMap::new(),
+
+                        // Initialize zero_coupon_bond as None
+                        zero_coupon_bond: HashMap::new(),
+
+                        contributors: HashMap::new(),
+
+                        proposal_creation_right: ProposalCreationRight::TOKEN_HOLDER_THRESHOLD(
+                            threshold,
+                        ),
+                    }
+                    .instantiate()
+                    .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
+                        owner_token_addresss.clone()
+                    ))))
+                    .with_address(address_reservation.clone())
+                    .globalize();
+                }
+                ProposalCreationRight::ADMIN => {
+                    component = Self {
+                        token_price: token_price.clone(),
+
+                        organization_name: organization_name.clone(),
+
+                        dao_token_address: dao_token_address.clone(),
+
+                        owner_token_addresss: owner_token_addresss.clone(),
+
+                        current_praposals: HashMap::new(),
+
+                        dao_token_resource_manager: voting_power_tokens.resource_manager(),
+
+                        dao_token: Vault::with_bucket(voting_power_tokens),
+
+                        buy_back_price: token_buy_back_price.clone(),
+
+                        shares: Vault::new(XRD),
+
+                        bonds: HashMap::new(),
+
+                        // Initialize zero_coupon_bond as None
+                        zero_coupon_bond: HashMap::new(),
+
+                        contributors: HashMap::new(),
+
+                        proposal_creation_right: ProposalCreationRight::ADMIN,
+                    }
+                    .instantiate()
+                    .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
+                        owner_token_addresss.clone()
+                    ))))
+                    .with_address(address_reservation.clone())
+                    .globalize();
+                }
             }
-            .instantiate()
-            .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
-                owner_token_addresss.clone()
-            ))))
-            .with_address(address_reservation.clone())
-            .globalize();
+
+            // let component = Self {
+            //     token_price: token_price.clone(),
+
+            //     organization_name: organization_name.clone(),
+
+            //     dao_token_address: dao_token_address.clone(),
+
+            //     owner_token_addresss: owner_token_addresss.clone(),
+
+            //     current_praposals: HashMap::new(),
+
+            //     dao_token_resource_manager: voting_power_tokens.resource_manager(),
+
+            //     dao_token: Vault::with_bucket(voting_power_tokens),
+
+            //     buy_back_price: token_buy_back_price.clone(),
+
+            //     shares: Vault::new(XRD),
+
+            //     bonds: HashMap::new(),
+
+            //     // Initialize zero_coupon_bond as None
+            //     zero_coupon_bond: HashMap::new(),
+
+            //     contributors: HashMap::new(),
+
+            //     proposal_creation_right: proposal_creation_right.clone(),
+            // }
+            // .instantiate()
+            // .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
+            //     owner_token_addresss.clone()
+            // ))))
+            // .with_address(address_reservation.clone())
+            // .globalize();
 
             let component_address = component.address();
 
             // create a metadata for event named TokenWeightedDeployment
-            let event_metadata = TokenWightedDeployment {
-                component_address,
+            // let event_metadata = TokenWightedDeployment {
+            //     component_address,
 
-                token_address: dao_token_address,
+            //     token_address: dao_token_address,
 
-                owner_token_address: owner_token_addresss,
+            //     owner_token_address: owner_token_addresss,
 
-                community_name: organization_name,
+            //     community_name: organization_name,
 
-                community_image: org_ico_url,
+            //     community_image: org_ico_url,
 
-                token_price,
+            //     token_price,
 
-                token_buy_back_price,
+            //     token_buy_back_price,
 
-                description,
+            //     description,
 
-                total_token: token_supply,
+            //     total_token: token_supply,
 
-                token_image: power_token_url,
+            //     token_image: power_token_url,
 
-                tags: tags.clone(),
+            //     tags: tags.clone(),
 
-                purpose: purpose.clone()
-            };
+            //     purpose: purpose.clone(),
+            // };
 
             // emit event | event emission
-            Runtime::emit_event(PandaoEvent {
-                event_type: EventType::DEPLOYMENT,
+            // Runtime::emit_event(PandaoEvent {
+            //     event_type: EventType::DEPLOYMENT,
 
-                dao_type: DaoType::TokenWeight,
+            //     dao_type: DaoType::TokenWeight,
 
-                component_address,
+            //     component_address,
 
-                meta_data: DaoEvent::TokenWeightedDEployment(event_metadata),
-            });
+            //     meta_data: DaoEvent::TokenWeightedDEployment(event_metadata),
+            // });
+
+            // Emit specific events based on the proposal creation right
+            match proposal_creation_right {
+                ProposalCreationRight::EVERYONE => {
+                    let event_metadata = TokenWightedDeployment {
+                        component_address,
+
+                        token_address: dao_token_address,
+
+                        owner_token_address: owner_token_addresss,
+
+                        community_name: organization_name,
+
+                        community_image: org_ico_url,
+
+                        token_price,
+
+                        token_buy_back_price,
+
+                        description,
+
+                        total_token: token_supply,
+
+                        token_image: power_token_url,
+
+                        tags: tags.clone(),
+
+                        purpose: purpose.clone(),
+
+                        proposal_creation_right: ProposalCreationRight::EVERYONE,
+                    };
+
+                    Runtime::emit_event(PandaoEvent {
+                        // event_type: EventType::PROPOSAL_CREATION_RIGHT,
+                        event_type: EventType::DEPLOYMENT,
+                        dao_type: DaoType::TokenWeight,
+                        component_address,
+                        meta_data: DaoEvent::TokenWeightedDEployment(event_metadata),
+                    });
+                }
+                ProposalCreationRight::TOKEN_HOLDER_THRESHOLD(threshold) => {
+                    let event_metadata = TokenWightedDeployment {
+                        component_address,
+
+                        token_address: dao_token_address,
+
+                        owner_token_address: owner_token_addresss,
+
+                        community_name: organization_name,
+
+                        community_image: org_ico_url,
+
+                        token_price,
+
+                        token_buy_back_price,
+
+                        description,
+
+                        total_token: token_supply,
+
+                        token_image: power_token_url,
+
+                        tags: tags.clone(),
+
+                        purpose: purpose.clone(),
+
+                        proposal_creation_right: ProposalCreationRight::TOKEN_HOLDER_THRESHOLD(
+                            threshold,
+                        ),
+                    };
+
+                    Runtime::emit_event(PandaoEvent {
+                        // event_type: EventType::PROPOSAL_CREATION_RIGHT,
+                        event_type: EventType::DEPLOYMENT,
+                        dao_type: DaoType::TokenWeight,
+                        component_address,
+                        meta_data: DaoEvent::TokenWeightedDEployment(event_metadata),
+                    });
+                }
+                ProposalCreationRight::ADMIN => {
+                    let event_metadata = TokenWightedDeployment {
+                        component_address,
+
+                        token_address: dao_token_address,
+
+                        owner_token_address: owner_token_addresss,
+
+                        community_name: organization_name,
+
+                        community_image: org_ico_url,
+
+                        token_price,
+
+                        token_buy_back_price,
+
+                        description,
+
+                        total_token: token_supply,
+
+                        token_image: power_token_url,
+
+                        tags: tags.clone(),
+
+                        purpose: purpose.clone(),
+
+                        proposal_creation_right: ProposalCreationRight::ADMIN,
+                    };
+
+                    Runtime::emit_event(PandaoEvent {
+                        // event_type: EventType::PROPOSAL_CREATION_RIGHT,
+                        event_type: EventType::DEPLOYMENT,
+                        dao_type: DaoType::TokenWeight,
+                        component_address,
+                        meta_data: DaoEvent::TokenWeightedDEployment(event_metadata),
+                    });
+                }
+            }
 
             //Event emission in blockchain systems is primarily used for transparency,
             //enabling tracking of significant actions and changes in state,
@@ -320,18 +551,16 @@ mod radixdao {
             address_issued_bonds_to_sell: Option<ComponentAddress>,
             target_xrd_amount: Option<Decimal>,
             proposal_creator_address: Option<ComponentAddress>,
-            governance_token_or_owner_token_address : Bucket,
-            voting_type: VotingType
+            governance_token_or_owner_token_address: Bucket,
+            voting_type: VotingType,
         ) -> (
             Global<crate::proposal::pandao_praposal::TokenWeightProposal>,
             String,
-            Bucket
+            Bucket,
         ) {
             //implement proposal creation rights
-            match self.proposal_creation_right{
-
+            match self.proposal_creation_right {
                 ProposalCreationRight::EVERYONE => {
-
                     assert_eq!(
                         governance_token_or_owner_token_address.resource_address(),
                         self.dao_token_address,
@@ -345,8 +574,7 @@ mod radixdao {
 
                     //allow proposal creation
                 }
-                ProposalCreationRight::TOKEN_HOLDER_THRESHOLD(threshold) =>{
-
+                ProposalCreationRight::TOKEN_HOLDER_THRESHOLD(threshold) => {
                     assert_eq!(
                         governance_token_or_owner_token_address.resource_address(),
                         self.dao_token_address,
@@ -359,7 +587,6 @@ mod radixdao {
                     );
                 }
                 ProposalCreationRight::ADMIN => {
-
                     assert_eq!(
                         governance_token_or_owner_token_address.resource_address(),
                         self.owner_token_addresss,
@@ -371,7 +598,6 @@ mod radixdao {
                         "ADMIN must pass his/her OWNER TOKEN to create proposal"
                     );
                 }
-
             }
 
             use crate::proposal::pandao_praposal::TokenWeightProposal;
@@ -385,22 +611,60 @@ mod radixdao {
 
             let amount_of_tokens_should_be_minted = None;
 
-            let (global_proposal_component, _) = TokenWeightProposal::new(
-                title.clone(),
-                description.clone(),
-                minimun_quorum,
-                start_time,
-                end_time,
-                self.owner_token_addresss.clone(),
-                self.dao_token_address.clone(),
-                address_issued_bonds_to_sell.clone(),
-                target_xrd_amount.clone(),
-                proposal_creator_address,
-                amount_of_tokens_should_be_minted,
-                voting_type
-            );
+            let global_proposal_component: Global<TokenWeightProposal>;
+
+            match voting_type {
+                VotingType::ResourceHold => {
+                    (global_proposal_component, _) = TokenWeightProposal::new(
+                        title.clone(),
+                        description.clone(),
+                        minimun_quorum,
+                        start_time,
+                        end_time,
+                        self.owner_token_addresss.clone(),
+                        self.dao_token_address.clone(),
+                        address_issued_bonds_to_sell.clone(),
+                        target_xrd_amount.clone(),
+                        proposal_creator_address,
+                        amount_of_tokens_should_be_minted,
+                        VotingType::ResourceHold,
+                    );
+                }
+                VotingType::Equality => {
+                    (global_proposal_component, _) = TokenWeightProposal::new(
+                        title.clone(),
+                        description.clone(),
+                        minimun_quorum,
+                        start_time,
+                        end_time,
+                        self.owner_token_addresss.clone(),
+                        self.dao_token_address.clone(),
+                        address_issued_bonds_to_sell.clone(),
+                        target_xrd_amount.clone(),
+                        proposal_creator_address,
+                        amount_of_tokens_should_be_minted,
+                        VotingType::Equality,
+                    );
+                }
+            }
+
+            // let (global_proposal_component, _) = TokenWeightProposal::new(
+            //     title.clone(),
+            //     description.clone(),
+            //     minimun_quorum,
+            //     start_time,
+            //     end_time,
+            //     self.owner_token_addresss.clone(),
+            //     self.dao_token_address.clone(),
+            //     address_issued_bonds_to_sell.clone(),
+            //     target_xrd_amount.clone(),
+            //     proposal_creator_address,
+            //     amount_of_tokens_should_be_minted,
+            //     VotingType::Equality
+            // );
 
             // global_proposal_component.callme("string".into()) ;
+
             let start_time_ts: i64 = start_time.to_instant().seconds_since_unix_epoch;
             let end_time_ts: i64 = end_time.to_instant().seconds_since_unix_epoch;
 
@@ -417,34 +681,98 @@ mod radixdao {
 
             inner_map.insert(proposal_id, global_proposal_component);
 
-            let praposal_metadata = PraposalMetadata {
-                title,
-                description,
-                minimum_quorum: minimun_quorum.into(),
-                end_time_ts,
-                start_time_ts,
-                owner_token_address: self.owner_token_addresss.clone(),
-                component_address: global_proposal_component.address(),
-                address_issued_bonds_to_sell,
-                target_xrd_amount,
-                proposal_creator_address,
-                amount_of_tokens_should_be_minted,
-                proposal_id,
-                governance_token_or_owner_token_address : governance_token_or_owner_token_address.resource_address()
-            };
-            let component_address = Runtime::global_address();
+            // let praposal_metadata = PraposalMetadata {
+            //     title,
+            //     description,
+            //     minimum_quorum: minimun_quorum.into(),
+            //     end_time_ts,
+            //     start_time_ts,
+            //     owner_token_address: self.owner_token_addresss.clone(),
+            //     component_address: global_proposal_component.address(),
+            //     address_issued_bonds_to_sell,
+            //     target_xrd_amount,
+            //     proposal_creator_address,
+            //     amount_of_tokens_should_be_minted,
+            //     proposal_id,
+            //     governance_token_or_owner_token_address: governance_token_or_owner_token_address
+            //         .resource_address(),
+            // };
+            // let component_address = Runtime::global_address();
 
-            Runtime::emit_event(PandaoEvent {
-                event_type: EventType::PRAPOSAL,
-                dao_type: DaoType::TokenWeight,
-                meta_data: DaoEvent::PraposalDeployment(praposal_metadata),
-                component_address,
-            });
+            // Runtime::emit_event(PandaoEvent {
+            //     event_type: EventType::PRAPOSAL,
+            //     dao_type: DaoType::TokenWeight,
+            //     meta_data: DaoEvent::PraposalDeployment(praposal_metadata),
+            //     component_address,
+            // });
+
+            match voting_type {
+                VotingType::ResourceHold => {
+                    let praposal_metadata = PraposalMetadata {
+                        title,
+                        description,
+                        minimum_quorum: minimun_quorum.into(),
+                        end_time_ts,
+                        start_time_ts,
+                        owner_token_address: self.owner_token_addresss.clone(),
+                        component_address: global_proposal_component.address(),
+                        address_issued_bonds_to_sell,
+                        target_xrd_amount,
+                        proposal_creator_address,
+                        amount_of_tokens_should_be_minted,
+                        proposal_id,
+                        governance_token_or_owner_token_address:
+                            governance_token_or_owner_token_address.resource_address(),
+                        token_type: VotingType::ResourceHold,
+                    };
+
+                    let component_address = Runtime::global_address();
+
+                    Runtime::emit_event(PandaoEvent {
+                        event_type: EventType::PRAPOSAL,
+                        dao_type: DaoType::TokenWeight,
+                        meta_data: DaoEvent::PraposalDeployment(praposal_metadata),
+                        component_address,
+                    });
+                }
+                VotingType::Equality => {
+                    let praposal_metadata = PraposalMetadata {
+                        title,
+                        description,
+                        minimum_quorum: minimun_quorum.into(),
+                        end_time_ts,
+                        start_time_ts,
+                        owner_token_address: self.owner_token_addresss.clone(),
+                        component_address: global_proposal_component.address(),
+                        address_issued_bonds_to_sell,
+                        target_xrd_amount,
+                        proposal_creator_address,
+                        amount_of_tokens_should_be_minted,
+                        proposal_id,
+                        governance_token_or_owner_token_address:
+                            governance_token_or_owner_token_address.resource_address(),
+                        token_type: VotingType::Equality,
+                    };
+
+                    let component_address = Runtime::global_address();
+
+                    Runtime::emit_event(PandaoEvent {
+                        event_type: EventType::PRAPOSAL,
+                        dao_type: DaoType::TokenWeight,
+                        meta_data: DaoEvent::PraposalDeployment(praposal_metadata),
+                        component_address,
+                    });
+                }
+            }
 
             let mut message = String::new();
             message = format!("Proposal created with id : {}", proposal_id);
 
-            (global_proposal_component, message, governance_token_or_owner_token_address)
+            (
+                global_proposal_component,
+                message,
+                governance_token_or_owner_token_address,
+            )
         }
 
         pub fn get_created_proposals(
@@ -520,11 +848,10 @@ mod radixdao {
                 bond_creator_address_option,
                 target_xrd_amount_option,
             ) {
-
                 // let current_epoch = Runtime::current_epoch();
                 // let current_time_seconds = current_epoch.number() as i64;
-                let now : Instant = Clock::current_time_rounded_to_seconds();
-                let current_time_seconds : i64 = now.seconds_since_unix_epoch;
+                let now: Instant = Clock::current_time_rounded_to_seconds();
+                let current_time_seconds: i64 = now.seconds_since_unix_epoch;
 
                 let last_time = proposal.get_last_time();
                 let end_time_seconds = last_time.to_instant().seconds_since_unix_epoch;
@@ -537,6 +864,31 @@ mod radixdao {
                     current_time_seconds > end_time_seconds,
                     "Proposal can only be executed after the specified end time"
                 );
+
+                // Check if the minimum quorum is met
+                let number_of_voters = proposal.get_number_of_voters();
+                let min_quo = proposal.get_minimum_quorum();
+                let minimum_quorum = min_quo.0.to_u64().expect("Invalid minimum quorum value") as usize;
+
+                if number_of_voters < minimum_quorum {
+                    // Emit an event indicating that the proposal cannot be executed due to insufficient participation
+                    let event_metadata = ProposalQuorumNotMet {
+                        proposal_id,
+                        minimum_quorum: proposal.get_minimum_quorum(),
+                        number_of_voters,
+                    };
+        
+                    let component_address = Runtime::global_address();
+        
+                    Runtime::emit_event(PandaoEvent {
+                        event_type: EventType::QUORUM_NOT_MET,
+                        dao_type: DaoType::TokenWeight,
+                        component_address,
+                        meta_data: DaoEvent::ProposalQuorumNotMet(event_metadata),
+                    });
+        
+                    panic!("The proposal cannot be executed due to insufficient participation");
+                }
 
                 // Check if the treasury has enough XRD
                 let treasury_balance = self.shares.amount();
@@ -555,19 +907,34 @@ mod radixdao {
                 // Handle remaining funds and received bond NFT
                 self.shares.put(remaining);
 
-                let praposal_metadata = PraposalExecute {
-                    praposal_address: proposal.address(),
-                    proposal_id, // purchased_bond_address,
-                                 // purchased_amount: purchased_amt
+                // let praposal_metadata = PraposalExecute {
+                //     praposal_address: proposal.address(),
+                //     proposal_id, // purchased_bond_address,
+                //                  // purchased_amount: purchased_amt
+                // };
+
+                // let component_address = Runtime::global_address();
+
+                // Runtime::emit_event(PandaoEvent {
+                //     event_type: EventType::EXECUTE_PROPOSAL,
+                //     dao_type: DaoType::TokenWeight,
+                //     meta_data: DaoEvent::ProposalExecute(praposal_metadata),
+                //     component_address,
+                // });
+
+                let event_metadata = ProposalQuorumMet {
+                    proposal_id,
+                    minimum_quorum: proposal.get_minimum_quorum(),
+                    number_of_voters,
                 };
-
+    
                 let component_address = Runtime::global_address();
-
+    
                 Runtime::emit_event(PandaoEvent {
-                    event_type: EventType::EXECUTE_PROPOSAL,
+                    event_type: EventType::QUORUM_MET,
                     dao_type: DaoType::TokenWeight,
-                    meta_data: DaoEvent::ProposalExecute(praposal_metadata),
                     component_address,
+                    meta_data: DaoEvent::ProposalQuorumMet(event_metadata),
                 });
 
                 // Optionally, you can remove the executed proposal from the current proposals
@@ -668,6 +1035,29 @@ mod radixdao {
             );
 
             let bond_component = ZeroCouponBond::instantiate_zerocouponbond(
+                contract_type.clone(),
+                contract_role.clone(),
+                contract_identifier.clone(),
+                nominal_interest_rate,
+                currency.clone(),
+                initial_exchange_date,
+                maturity_date,
+                notional_principal,
+                discount,
+                bond_position.clone(),
+                price,
+                number_of_bonds,
+            );
+
+            self.zero_coupon_bond
+                .entry(your_address)
+                .or_insert_with(Vec::new)
+                .push(bond_component);
+            // self.zero_coupon_bond = Some(bond_component);
+
+            // Emit the ZeroCouponBondCreation event
+            let event_metadata = ZeroCouponBondCreation {
+                component_address: bond_component.address(),
                 contract_type,
                 contract_role,
                 contract_identifier,
@@ -680,13 +1070,15 @@ mod radixdao {
                 bond_position,
                 price,
                 number_of_bonds,
-            );
+                creator_address: your_address,
+            };
 
-            self.zero_coupon_bond
-                .entry(your_address)
-                .or_insert_with(Vec::new)
-                .push(bond_component);
-            // self.zero_coupon_bond = Some(bond_component);
+            Runtime::emit_event(PandaoEvent {
+                event_type: EventType::ZERO_COUPON_BOND_CREATION, // You can define a specific event type for bond creation if needed
+                dao_type: DaoType::TokenWeight,
+                component_address: Runtime::global_address(),
+                meta_data: DaoEvent::ZeroCouponBondCreation(event_metadata),
+            });
 
             bond_component
         }
@@ -886,149 +1278,145 @@ mod radixdao {
         //     }
         // }
 
-        pub fn create_proposal_to_mint_more_dao_tokens(
-            &mut self, 
-            title: String, 
-            description : String, 
-            minimun_quorum: u8,
-            amount_of_tokens_should_be_minted : Option<usize>, 
-            start_time: scrypto::time::UtcDateTime,
-            end_time: scrypto::time::UtcDateTime,  
-            proposal_creator_address : Option<ComponentAddress>,
-            governance_token_or_owner_token_address : Bucket,
-            voting_type: VotingType
-        )
+        // pub fn create_proposal_to_mint_more_dao_tokens(
+        //     &mut self,
+        //     title: String,
+        //     description: String,
+        //     minimun_quorum: u8,
+        //     amount_of_tokens_should_be_minted: Option<usize>,
+        //     start_time: scrypto::time::UtcDateTime,
+        //     end_time: scrypto::time::UtcDateTime,
+        //     proposal_creator_address: Option<ComponentAddress>,
+        //     governance_token_or_owner_token_address: Bucket,
+        //     voting_type: VotingType,
+        // ) -> (
+        //     Global<crate::proposal::pandao_praposal::TokenWeightProposal>,
+        //     String,
+        //     Bucket,
+        // ) {
+        //     match self.proposal_creation_right {
+        //         ProposalCreationRight::EVERYONE => {
+        //             assert_eq!(
+        //                 governance_token_or_owner_token_address.resource_address(),
+        //                 self.dao_token_address,
+        //                 "wrong voting token supplied! please make sure that you supply DAO Governance Token"
+        //             );
 
-        -> (
-            Global<crate::proposal::pandao_praposal::TokenWeightProposal>,
-            String, 
-            Bucket
-        )
+        //             assert!(
+        //                 governance_token_or_owner_token_address.amount() >= Decimal::one(),
+        //                 "Proposal creator must have at least one governance token to create a proposal"
+        //             );
 
-        {
+        //             //allow proposal creation
+        //         }
+        //         ProposalCreationRight::TOKEN_HOLDER_THRESHOLD(threshold) => {
+        //             assert_eq!(
+        //                 governance_token_or_owner_token_address.resource_address(),
+        //                 self.dao_token_address,
+        //                 "wrong voting token supplied! please make sure that you supply DAO Governance Token"
+        //             );
 
-            match self.proposal_creation_right{
+        //             assert!(
+        //                 governance_token_or_owner_token_address.amount() >= threshold,
+        //                 "Proposal creator does not have enough tokens to meet the threshold"
+        //             );
+        //         }
+        //         ProposalCreationRight::ADMIN => {
+        //             assert_eq!(
+        //                 governance_token_or_owner_token_address.resource_address(),
+        //                 self.owner_token_addresss,
+        //                 "Only the admin can create a proposal and If you are an Admin please make sure you pass OWNER TOKEN ADDRESS"
+        //             );
 
-                ProposalCreationRight::EVERYONE => {
+        //             assert!(
+        //                 governance_token_or_owner_token_address.amount() >= Decimal::one(),
+        //                 "ADMIN must pass his/her OWNER TOKEN to create proposal"
+        //             );
+        //         }
+        //     }
 
-                    assert_eq!(
-                        governance_token_or_owner_token_address.resource_address(),
-                        self.dao_token_address,
-                        "wrong voting token supplied! please make sure that you supply DAO Governance Token"
-                    );
+        //     let address_issued_bonds_to_sell = None;
+        //     let target_xrd_amount = None;
 
-                    assert!(
-                        governance_token_or_owner_token_address.amount() >= Decimal::one(),
-                        "Proposal creator must have at least one governance token to create a proposal"
-                    );
+        //     let (global_proposal_component, _) = TokenWeightProposal::new(
+        //         title.clone(),
+        //         description.clone(),
+        //         minimun_quorum,
+        //         start_time,
+        //         end_time,
+        //         self.owner_token_addresss.clone(),
+        //         self.dao_token_address.clone(),
+        //         address_issued_bonds_to_sell.clone(),
+        //         target_xrd_amount.clone(),
+        //         proposal_creator_address,
+        //         amount_of_tokens_should_be_minted,
+        //         voting_type,
+        //     );
 
-                    //allow proposal creation
-                }
-                ProposalCreationRight::TOKEN_HOLDER_THRESHOLD(threshold) =>{
+        //     let proposal_id: usize = Self::get_proposal_id()
+        //         .try_into()
+        //         .expect("couldn't get called successfully");
 
-                    assert_eq!(
-                        governance_token_or_owner_token_address.resource_address(),
-                        self.dao_token_address,
-                        "wrong voting token supplied! please make sure that you supply DAO Governance Token"
-                    );
+        //     let inner_map = self
+        //         .current_praposals
+        //         .entry(proposal_creator_address.unwrap())
+        //         .or_insert_with(HashMap::new);
 
-                    assert!(
-                        governance_token_or_owner_token_address.amount() >= threshold,
-                        "Proposal creator does not have enough tokens to meet the threshold"
-                    );
-                }
-                ProposalCreationRight::ADMIN => {
+        //     inner_map.insert(proposal_id, global_proposal_component);
 
-                    assert_eq!(
-                        governance_token_or_owner_token_address.resource_address(),
-                        self.owner_token_addresss,
-                        "Only the admin can create a proposal and If you are an Admin please make sure you pass OWNER TOKEN ADDRESS"
-                    );
+        //     let start_time_s = start_time.to_instant().seconds_since_unix_epoch;
+        //     let end_time_s = end_time.to_instant().seconds_since_unix_epoch;
 
-                    assert!(
-                        governance_token_or_owner_token_address.amount() >= Decimal::one(),
-                        "ADMIN must pass his/her OWNER TOKEN to create proposal"
-                    );
-                }
+        //     let proposal_metadata = PraposalMetadata {
+        //         title,
+        //         description,
+        //         minimum_quorum: minimun_quorum.into(),
+        //         start_time_ts: start_time_s,
+        //         end_time_ts: end_time_s,
+        //         owner_token_address: self.owner_token_addresss.clone(),
+        //         component_address: global_proposal_component.address(),
+        //         address_issued_bonds_to_sell,
+        //         target_xrd_amount,
+        //         proposal_creator_address,
+        //         amount_of_tokens_should_be_minted,
+        //         proposal_id,
+        //         governance_token_or_owner_token_address: governance_token_or_owner_token_address
+        //             .resource_address(),
+        //     };
 
-            }
+        //     let component_address = Runtime::global_address();
 
-        
-            let address_issued_bonds_to_sell = None;
-            let target_xrd_amount = None;
+        //     Runtime::emit_event(PandaoEvent {
+        //         event_type: EventType::PRAPOSAL,
+        //         dao_type: DaoType::TokenWeight,
+        //         meta_data: DaoEvent::PraposalDeployment(proposal_metadata),
+        //         component_address,
+        //     });
 
-            let (global_proposal_component, _) = TokenWeightProposal::new(
-                title.clone(),
-                description.clone(),
-                minimun_quorum,
-                start_time,
-                end_time,
-                self.owner_token_addresss.clone(),
-                self.dao_token_address.clone(),
-                address_issued_bonds_to_sell.clone(),
-                target_xrd_amount.clone(),
-                proposal_creator_address,
-                amount_of_tokens_should_be_minted,
-                voting_type
-            );
+        //     let mut message = String::new();
+        //     message = format!("Proposal created with id : {}", proposal_id);
 
-            let proposal_id : usize = Self::get_proposal_id().try_into().expect("couldn't get called successfully");
+        //     (
+        //         global_proposal_component,
+        //         message,
+        //         governance_token_or_owner_token_address,
+        //     )
+        // }
 
-            let inner_map = self.current_praposals.entry(proposal_creator_address.unwrap()).or_insert_with(HashMap::new);
-
-            inner_map.insert(proposal_id, global_proposal_component);
-
-            let start_time_s = start_time.to_instant().seconds_since_unix_epoch;
-            let end_time_s = end_time.to_instant().seconds_since_unix_epoch;
-
-            let proposal_metadata = PraposalMetadata{
-                title,
-                description,
-                minimum_quorum: minimun_quorum.into(),
-                start_time_ts: start_time_s,
-                end_time_ts : end_time_s,
-                owner_token_address: self.owner_token_addresss.clone(),
-                component_address: global_proposal_component.address(),
-                address_issued_bonds_to_sell,
-                target_xrd_amount,
-                proposal_creator_address,
-                amount_of_tokens_should_be_minted,
-                proposal_id,
-                governance_token_or_owner_token_address : governance_token_or_owner_token_address.resource_address()
-            };
-
-            let component_address = Runtime::global_address();
-
-            Runtime::emit_event(PandaoEvent {
-                event_type: EventType::PRAPOSAL,
-                dao_type: DaoType::TokenWeight,
-                meta_data: DaoEvent::PraposalDeployment(proposal_metadata),
-                component_address
-            });
-
-            let mut message = String::new();
-            message = format!("Proposal created with id : {}", proposal_id);
-
-
-
-            (global_proposal_component, message, governance_token_or_owner_token_address)
-
+        pub fn mint_more_tokens(&mut self, token_number_to_mint: usize) {
+            self.dao_token
+                .put(self.dao_token_resource_manager.mint(token_number_to_mint));
         }
 
-        pub fn mint_more_tokens(&mut self, token_number_to_mint : usize){
-            self.dao_token.put(self.dao_token_resource_manager.mint(token_number_to_mint));
-        }
-
-        pub fn execute_proposal_to_mint_more_tokens(&mut self, proposal_id : usize) -> Result<String, String> {
-
+        pub fn execute_proposal_to_mint_more_tokens(
+            &mut self,
+            proposal_id: usize,
+        ) -> Result<String, String> {
             for (_, inner_map) in &self.current_praposals {
-
                 let proposal = inner_map.get(&proposal_id);
 
-
-                
-                let now : Instant = Clock::current_time_rounded_to_seconds();
-                let current_time_seconds : i64 = now.seconds_since_unix_epoch;
+                let now: Instant = Clock::current_time_rounded_to_seconds();
+                let current_time_seconds: i64 = now.seconds_since_unix_epoch;
 
                 let last_time = proposal.unwrap().get_last_time();
                 let end_time_seconds = last_time.to_instant().seconds_since_unix_epoch;
@@ -1042,26 +1430,19 @@ mod radixdao {
                     "Proposal can only be executed after the specified end time"
                 );
 
-
-                
-
                 match proposal {
                     Some(proposal) => {
-                        if let Some(how_much_amount) = proposal.get_token_mint_amount(){
-
+                        if let Some(how_much_amount) = proposal.get_token_mint_amount() {
                             &self.mint_more_tokens(how_much_amount);
 
                             let message = "proposal executed successfully".to_string();
 
-                            return Ok(message)
-
-                        }else{
+                            return Ok(message);
+                        } else {
                             return Err(format!("token_mint_amount is not present in a proposal with id : {proposal_id} and it seems not to be a proposal to mint more tokens"));
                         }
-                    },
-                    None => {
-                        return Err(format!("proposal with id : {proposal_id} not found"))
                     }
+                    None => return Err(format!("proposal with id : {proposal_id} not found")),
                 }
             }
             return Err(format!("proposal with id : {proposal_id} not found"));

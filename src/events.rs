@@ -18,6 +18,11 @@ pub enum EventType {
 
     TREASURY_CONTRIBUTION,
 
+    ZERO_COUPON_BOND_CREATION,
+
+    QUORUM_NOT_MET,
+
+    QUORUM_MET
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
@@ -54,7 +59,7 @@ pub struct TokenWightedDeployment {
 
     pub purpose : String,
 
-    // pub proposal_creation_right : ProposalCreationRight
+    pub proposal_creation_right : ProposalCreationRight
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
@@ -86,7 +91,8 @@ pub struct PraposalMetadata {
     pub proposal_creator_address : Option<ComponentAddress>,
     pub amount_of_tokens_should_be_minted : Option<usize>,
     pub proposal_id : usize,
-    pub governance_token_or_owner_token_address : ResourceAddress
+    pub governance_token_or_owner_token_address : ResourceAddress,
+    pub token_type : VotingType
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
@@ -103,7 +109,31 @@ pub enum DaoEvent {
     PraposalVote(ProposalVote),
 
     TreasuryContribution(TreasuryContribution), 
+
+    ZeroCouponBondCreation(ZeroCouponBondCreation),
+
+    ProposalQuorumNotMet(ProposalQuorumNotMet), // New event type
+
+    ProposalQuorumMet(ProposalQuorumMet)
+
+    // ProposalCreationRightEveryone,
+
+    // ProposalCreationRightTokenHolderThreshold(Decimal),
+
+    // ProposalCreationRightAdmin
+
 }
+
+// #[derive(ScryptoSbor, ScryptoEvent)]
+// pub enum ProposalRightEvent {
+
+//     ProposalCreationRightEveryone,
+
+//     ProposalCreationRightTokenHolderThreshold(Decimal),
+
+//     ProposalCreationRightAdmin
+
+// }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub struct PraposalExecute{
@@ -132,8 +162,14 @@ pub struct PandaoEvent {
 
     pub component_address: ComponentAddress,
     
-    pub meta_data: DaoEvent,
+    pub meta_data: DaoEvent
 }
+
+// #[derive(ScryptoSbor, ScryptoEvent)]
+// pub struct PandaoAdditionalEvent {
+    
+//     pub meta_data: ProposalRightEvent
+// }
 
 // create an event for community_creation
 #[derive(ScryptoSbor, ScryptoEvent)]
@@ -163,4 +199,36 @@ pub enum ProposalCreationRight {
 pub enum VotingType {
     ResourceHold,
     Equality,
+}
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct ZeroCouponBondCreation {
+    pub component_address: ComponentAddress,
+    pub contract_type: String,
+    pub contract_role: String,
+    pub contract_identifier: String,
+    pub nominal_interest_rate: Decimal,
+    pub currency: String,
+    pub initial_exchange_date: u64,
+    pub maturity_date: u64,
+    pub notional_principal: Decimal,
+    pub discount: u64,
+    pub bond_position: String,
+    pub price: Decimal,
+    pub number_of_bonds: Decimal,
+    pub creator_address: ComponentAddress,
+}
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct ProposalQuorumNotMet {
+    pub proposal_id: usize,
+    pub minimum_quorum: Decimal,
+    pub number_of_voters: usize,
+}
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct ProposalQuorumMet {
+    pub proposal_id: usize,
+    pub minimum_quorum: Decimal,
+    pub number_of_voters: usize,
 }

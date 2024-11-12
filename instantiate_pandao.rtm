@@ -19,7 +19,11 @@ CALL_FUNCTION
     "investment",
     "finance")
     "Investment is the primary objective"
+    Enum<1u8>(
+    Decimal("5")
+    )
 ;
+
 
 CALL_METHOD
     Address("account_tdx_2_128e6fmjkhjqx0n8h9562rrvstl883wq22pzea4ucnnx0762ptlch4s")

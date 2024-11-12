@@ -169,5 +169,9 @@ mod pandao_praposal {
             self.vote_caster_addresses.len()
         }
 
+        pub fn get_minimum_quorum(&self) -> Decimal{
+            self.minimum_quorum
+        }
+
     }
 }

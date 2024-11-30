@@ -1,0 +1,5 @@
+CALL_METHOD
+  Address("component_tdx_2_1cpdj0sqfz2gx0kdeearkg7676h5m877vz8lu4dfykghcfjeq66d57a")
+  "sell_bond"
+  Address("account_tdx_2_1280l7wkzy35dsgvknl3xdh2q8uq7xluven2ycplrflqfqjkveuha90")
+;

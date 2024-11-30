@@ -14,7 +14,7 @@ mod radixdao {
 
     use super::*;
     use proposal::pandao_praposal::TokenWeightProposal;
-    use scrypto::address;
+    
     // use scrypto_test::prelude::drop_fungible_bucket;
     use zerocouponbond::zerocouponbond::ZeroCouponBond;
 
@@ -1151,6 +1151,19 @@ mod radixdao {
             let principal_plus_interest = latest_bond_component.sell_the_bond(purchased_bond);
 
             self.shares.put(principal_plus_interest);
+
+
+            let event_metadata = ZeroCouponBondIsSold {
+                bond_component_address: latest_bond_component.address(),
+                bond_creator_address
+            };
+
+            Runtime::emit_event(PandaoEvent {
+                event_type: EventType::ZERO_COUPON_BOND_IS_SOLD, // You can define a specific event type for bond creation if needed
+                dao_type: DaoType::Investment,
+                component_address: Runtime::global_address(),
+                meta_data: DaoEvent::ZeroCouponBondIsSold(event_metadata),
+            });
 
         }
 

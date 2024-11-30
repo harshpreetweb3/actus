@@ -22,7 +22,9 @@ pub enum EventType {
 
     QUORUM_NOT_MET,
 
-    QUORUM_MET
+    QUORUM_MET,
+
+    ZERO_COUPON_BOND_IS_SOLD
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
@@ -113,7 +115,10 @@ pub enum DaoEvent {
 
     ProposalQuorumNotMet(ProposalQuorumNotMet), // New event type
 
-    ProposalQuorumMet(ProposalQuorumMet)
+    ProposalQuorumMet(ProposalQuorumMet),
+
+    ZeroCouponBondIsSold(ZeroCouponBondIsSold),
+
 
     // ProposalCreationRightEveryone,
 
@@ -217,6 +222,13 @@ pub struct ZeroCouponBondCreation {
     pub number_of_bonds: Decimal,
     pub creator_address: ComponentAddress,
 }
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct ZeroCouponBondIsSold {
+    pub bond_component_address : ComponentAddress,
+    pub bond_creator_address : ComponentAddress
+}
+
 
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub struct ProposalQuorumNotMet {

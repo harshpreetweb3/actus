@@ -1,5 +1,5 @@
-`CALL_FUNCTION
-Address("package_tdx_2_1phqlaxx0lkkujrtsjk4ulpmd86rc8e929l90ytu7sgzyqlhl6w2zvg")
+CALL_FUNCTION
+Address("package_tdx_2_1ph2rl8meqeucfm9hje2q556k4878a79nsln9q5v87ngm43h65zxhff")
 "TokenWeigtedDao"
 "initiate"
 "organizationName"
@@ -11,10 +11,10 @@ Decimal("")
 "organizationTokenImage"
 ;
 CALL_METHOD
-    Address("userAccount")
+    Address("account_tdx_2_1280l7wkzy35dsgvknl3xdh2q8uq7xluven2ycplrflqfqjkveuha90")
     "deposit_batch"
     Expression("ENTIRE_WORKTOP")
-;`
+;
 
 
 

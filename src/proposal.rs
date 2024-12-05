@@ -20,7 +20,7 @@ mod pandao_praposal {
         pub voted_against: Decimal,
     
         /// The minimum amount of quorum required for this proposal to pass.
-        pub minimum_quorum: Decimal,
+        pub minimum_quorum: usize,
     
         /// The time when the proposal ends.
         pub end_time: UtcDateTime,
@@ -169,7 +169,7 @@ mod pandao_praposal {
             self.vote_caster_addresses.len()
         }
 
-        pub fn get_minimum_quorum(&self) -> Decimal{
+        pub fn get_minimum_quorum(&self) -> usize{
             self.minimum_quorum
         }
 

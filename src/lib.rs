@@ -869,10 +869,8 @@ mod radixdao {
 
                 // Check if the minimum quorum is met
                 let number_of_voters = proposal.get_number_of_voters();
-                let min_quo: Decimal = proposal.get_minimum_quorum();
-                // let minimum_quorum: usize = min_quo.0.to_u64().expect("Invalid minimum quorum value") as usize;
-                let minimum_quorum = min_quo.to_string().parse::<u64>().unwrap_or(0) as usize;
-                // let minimum_quorum = min_quo.round().to_u64().unwrap_or(0) as usize;
+                let minimum_quorum = proposal.get_minimum_quorum() as usize;
+                // let  = min_quo.0.to_u64().expect("Invalid minimum quorum value") as usize;
 
                 if number_of_voters < minimum_quorum {
                     // Emit an event indicating that the proposal cannot be executed due to insufficient participation

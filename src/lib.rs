@@ -1045,6 +1045,8 @@ mod radixdao {
                 "This address has already created a bond and cannot create another."
             );
 
+            let collateral_resource_address = nft_as_collateral.resource_address();
+
             let bond_component = ZeroCouponBond::instantiate_zerocouponbond(
                 contract_type.clone(),
                 contract_role.clone(),
@@ -1083,6 +1085,7 @@ mod radixdao {
                 price,
                 number_of_bonds,
                 creator_address: your_address,
+                collateral_resource_address,
             };
 
             Runtime::emit_event(PandaoEvent {

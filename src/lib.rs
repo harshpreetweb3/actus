@@ -50,6 +50,8 @@ mod radixdao {
         contributors: HashMap<ComponentAddress, Decimal>,
 
         proposal_creation_right: ProposalCreationRight,
+
+        liquidated_collateral: Vault,
     }
 
     impl TokenWeigtedDao {
@@ -163,6 +165,10 @@ mod radixdao {
                         contributors: HashMap::new(),
 
                         proposal_creation_right: ProposalCreationRight::EVERYONE,
+
+                        liquidated_collateral: Vault::new(XRD),
+
+
                     }
                     .instantiate()
                     .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
@@ -201,6 +207,8 @@ mod radixdao {
                         proposal_creation_right: ProposalCreationRight::TOKEN_HOLDER_THRESHOLD(
                             threshold,
                         ),
+
+                        liquidated_collateral: Vault::new(XRD),
                     }
                     .instantiate()
                     .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
@@ -237,6 +245,8 @@ mod radixdao {
                         contributors: HashMap::new(),
 
                         proposal_creation_right: ProposalCreationRight::ADMIN,
+
+                        liquidated_collateral: Vault::new(XRD),
                     }
                     .instantiate()
                     .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
@@ -1026,7 +1036,8 @@ mod radixdao {
             bond_position: String,
             price: Decimal,
             number_of_bonds: Decimal,
-            your_address: ComponentAddress, //OK -> Account address is of ComponentAddress Type
+            your_address: ComponentAddress,
+            nft_as_collateral: Bucket, //OK -> Account address is of ComponentAddress Type
         ) -> Global<ZeroCouponBond> {
             // Ensure the address has not created any bonds already
             assert!(
@@ -1047,6 +1058,7 @@ mod radixdao {
                 bond_position.clone(),
                 price,
                 number_of_bonds,
+                nft_as_collateral,
             );
 
             self.zero_coupon_bond
@@ -1462,6 +1474,32 @@ mod radixdao {
                 }
             }
             return Err(format!("proposal with id : {proposal_id} not found"));
+        }
+
+        pub fn liquidated_collateral (&mut self, bond_creator_address: ComponentAddress) {
+
+            assert!(
+                self.zero_coupon_bond.contains_key(&bond_creator_address),
+                "No bonds created by the specified address."
+            );
+
+            // Retrieve the most recent bond component created by the bond creator
+            let bond_components = self
+                .zero_coupon_bond
+                .get_mut(&bond_creator_address)
+                .unwrap();
+
+            let latest_bond_component =
+                bond_components.last_mut().expect("No bond component found");
+
+            let redeemed_collateral= latest_bond_component.redeem_collateral();
+
+            self.liquidated_collateral = Vault::new(redeemed_collateral.resource_address());
+
+            self.liquidated_collateral.put(redeemed_collateral);
+            
+
+
         }
     }
 }

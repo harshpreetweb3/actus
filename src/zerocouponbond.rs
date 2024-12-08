@@ -35,7 +35,8 @@
             bonds: Vault,
             collected_xrd: Vault,
             price: Decimal,
-            pub bond_resourse_address : ResourceAddress
+            pub bond_resourse_address : ResourceAddress,
+            pub collateral : Vault,
         }
 
         impl ZeroCouponBond {
@@ -63,6 +64,7 @@
                 bond_position: String,          // long or short position
                 price: Decimal,                 // price per bond
                 number_of_bonds: Decimal,       // number of bonds to mint
+                nft_as_collateral: Bucket,      // collateral for bonds
             ) -> Global<ZeroCouponBond> {
                 let bucket_of_bonds: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
                     .divisibility(DIVISIBILITY_NONE)
@@ -92,7 +94,8 @@
                     bonds: Vault::with_bucket(bucket_of_bonds),
                     collected_xrd: Vault::new(XRD),
                     price,
-                    bond_resourse_address
+                    bond_resourse_address,
+                    collateral: Vault::with_bucket(nft_as_collateral)
                 }
                 .instantiate()
                 .prepare_to_globalize(OwnerRole::None)
@@ -183,6 +186,10 @@
                     amount: self.bonds.amount(),
                     maturity_days_left: days_left,
                 }
+            }
+
+            pub fn redeem_collateral(&mut self) -> Bucket {
+                self.collateral.take(1)
             }
 
             // function to check the price of the bond

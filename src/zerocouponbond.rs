@@ -12,7 +12,7 @@
         pub notional_principal: Decimal,
         pub discount: u64,
         pub bond_position: String,
-        pub price: Decimal,
+        pub price: u64,
         pub amount: Decimal,
         pub maturity_days_left: i64,
        
@@ -34,7 +34,7 @@
             bond_position: String,
             bonds: Vault,
             collected_xrd: Vault,
-            price: Decimal,
+            price: u64,
             pub bond_resourse_address : ResourceAddress,
             pub collateral : Vault,
         }
@@ -62,7 +62,7 @@
                 notional_principal: Decimal,    // price defined by bond creator
                 discount: u64,                  // discount on bond
                 bond_position: String,          // long or short position
-                price: Decimal,                 // price per bond
+                price: u64,                 // price per bond
                 number_of_bonds: Decimal,       // number of bonds to mint
                 nft_as_collateral: Bucket,      // collateral for bonds
             ) -> Global<ZeroCouponBond> {
@@ -188,8 +188,52 @@
                 }
             }
 
-            pub fn redeem_collateral(&mut self) -> Bucket {
+            //LIQUIDATE COLLATERAL
+            //ONLY COMMUNITY CAN CALL THIS
+            pub fn liquidate_collateral(&mut self) -> Bucket {
+
+                //AFTER MATURITY DATE
+                let now: Instant = Clock::current_time_rounded_to_seconds();
+                let current_time_seconds: u64 = now.seconds_since_unix_epoch as u64;
+                //CHECK IF MATURITY DATE PASSED
+                assert!(self.maturity_date < current_time_seconds, "you cannot redeem the collateral because maturity date is not passed yet");
                 self.collateral.take(1)
+            }
+
+            //GET BACK THE INVESTED XRD + INTEREST RATE
+            //FOR A COMMUNITY
+            pub fn claim_the_invested_XRDs_plus_interest(&mut self) -> Bucket{
+
+                let bond_price = self.price;
+
+                let interest_amount = (self.nominal_interest_rate/100)*bond_price;
+
+                let total_amount = bond_price + interest_amount;
+
+                self.collected_xrd.take(total_amount)
+
+            }
+
+            pub fn take_out_the_invested_XRDs_by_the_community(&mut self)
+
+            -> Bucket
+
+            {
+                let bond_price = self.price;
+
+                self.collected_xrd.take(bond_price)
+
+            }
+
+            pub fn put_in_money_plus_interest_for_the_community_to_redeem(&mut self, borrowed_xrd_with_interest : Bucket){
+                self.collected_xrd.put(borrowed_xrd_with_interest)
+            }
+
+            pub fn check_the_balance_of_bond_issuer(&self) 
+            -> Decimal
+            {
+                let balance = self.collected_xrd.amount();
+                balance
             }
 
             // function to check the price of the bond

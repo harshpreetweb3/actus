@@ -1034,7 +1034,7 @@ mod radixdao {
             notional_principal: Decimal,
             discount: u64,
             bond_position: String,
-            price: Decimal,
+            price: u64,
             number_of_bonds: Decimal,
             your_address: ComponentAddress,
             nft_as_collateral: Bucket, //OK -> Account address is of ComponentAddress Type
@@ -1495,15 +1495,104 @@ mod radixdao {
             let latest_bond_component =
                 bond_components.last_mut().expect("No bond component found");
 
-            let redeemed_collateral= latest_bond_component.redeem_collateral();
+            let redeemed_collateral= latest_bond_component.liquidate_collateral();
 
             self.liquidated_collateral = Vault::new(redeemed_collateral.resource_address());
 
             self.liquidated_collateral.put(redeemed_collateral);
-            
+        }
 
+        pub fn claim_the_invested_XRDs_plus_interest(&mut self, bond_creator_address: ComponentAddress){
+
+            assert!(
+                self.zero_coupon_bond.contains_key(&bond_creator_address),
+                "No bonds created by the specified address."
+            );
+
+            // Retrieve the most recent bond component created by the bond creator
+            let bond_components = self
+                .zero_coupon_bond
+                .get_mut(&bond_creator_address)
+                .unwrap();
+
+            let latest_bond_component =
+                bond_components.last_mut().expect("No bond component found");
+            
+            let claimed_invested_xrd_plus_interest= latest_bond_component.claim_the_invested_XRDs_plus_interest();
+
+            self.shares.put(claimed_invested_xrd_plus_interest);
 
         }
+
+        //FOR BOND ISSUER TO TAKE OUT COMMUNITY INVESTMENT
+        pub fn take_out_the_invested_XRDs_by_the_community(&mut self, bond_creator_address: ComponentAddress)
+        -> Bucket
+        {
+
+            assert!(
+                self.zero_coupon_bond.contains_key(&bond_creator_address),
+                "No bonds created by the specified address."
+            );
+
+            // Retrieve the most recent bond component created by the bond creator
+            let bond_components = self
+                .zero_coupon_bond
+                .get_mut(&bond_creator_address)
+                .unwrap();
+
+            let latest_bond_component =
+                bond_components.last_mut().expect("No bond component found");
+            
+            let taken_out_invested_amount= latest_bond_component.take_out_the_invested_XRDs_by_the_community();
+
+            taken_out_invested_amount
+
+        }
+
+        pub fn put_in_money_plus_interest_for_the_community_to_redeem(&mut self, bond_creator_address: ComponentAddress, borrowed_xrd_with_interest : Bucket)
+       
+        {
+
+            assert!(
+                self.zero_coupon_bond.contains_key(&bond_creator_address),
+                "No bonds created by the specified address."
+            );
+
+            // Retrieve the most recent bond component created by the bond creator
+            let bond_components = self
+                .zero_coupon_bond
+                .get_mut(&bond_creator_address)
+                .unwrap();
+
+            let latest_bond_component =
+                bond_components.last_mut().expect("No bond component found");
+            
+            latest_bond_component.put_in_money_plus_interest_for_the_community_to_redeem(borrowed_xrd_with_interest)
+        }
+
+        pub fn check_the_balance_of_bond_issuer(&mut self, bond_creator_address: ComponentAddress)
+       -> Decimal
+        {
+
+            assert!(
+                self.zero_coupon_bond.contains_key(&bond_creator_address),
+                "No bonds created by the specified address."
+            );
+
+            // Retrieve the most recent bond component created by the bond creator
+            let bond_components = self
+                .zero_coupon_bond
+                .get_mut(&bond_creator_address)
+                .unwrap();
+
+            let latest_bond_component =
+                bond_components.last_mut().expect("No bond component found");
+            
+            latest_bond_component.check_the_balance_of_bond_issuer()
+        }
+
+
+
     }
 }
 

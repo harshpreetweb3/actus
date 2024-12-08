@@ -213,7 +213,7 @@ pub struct ZeroCouponBondCreation {
     pub notional_principal: Decimal,
     pub discount: u64,
     pub bond_position: String,
-    pub price: Decimal,
+    pub price: u64,
     pub number_of_bonds: Decimal,
     pub creator_address: ComponentAddress,
     pub collateral_resource_address: ResourceAddress,

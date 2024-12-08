@@ -42,6 +42,9 @@ mod pandao_praposal {
         pub proposal_creator_address : Option<ComponentAddress>,
         pub amount_of_tokens_should_be_minted : Option<usize>,
         pub voting_type: VotingType,
+        pub proposal_creation_status : bool,
+        pub proposal_execution_status : bool,
+        pub proposal_denied_status : bool
         // pub number_of_people_voted: i32
     }
 
@@ -60,10 +63,15 @@ mod pandao_praposal {
             proposal_creator_address : Option<ComponentAddress>,
             amount_of_tokens_should_be_minted : Option<usize>,
             voting_type: VotingType, // New parameter
+
         ) -> (Global<TokenWeightProposal >, GlobalAddressReservation) {
             
             let (address_reservation, _) =
                 Runtime::allocate_component_address(TokenWeightProposal ::blueprint_id());
+
+            let proposal_creation_status = true;
+            let proposal_execution_status = false;
+            let proposal_denied_status = false; 
 
             let proposal = TokenWeightProposal {
                 title,
@@ -80,7 +88,10 @@ mod pandao_praposal {
                 vote_caster_addresses : HashSet::new(),
                 proposal_creator_address,
                 amount_of_tokens_should_be_minted,
-                voting_type
+                voting_type,
+                proposal_creation_status,
+                proposal_execution_status,
+                proposal_denied_status
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::None)
@@ -130,6 +141,30 @@ mod pandao_praposal {
 
             
         }
+
+        // pub fn get_the_collateral_back(&self)
+        // // -> Bucket
+        // {
+            
+        //     // assert!(
+        //     //     self.proposal_creation_status == true,
+        //     //     "You can only sell one bond at a time."
+        //     // );
+
+        //     if self.proposal_creation_status == true {
+        //     panic!("Someone has created a proposal, you need to wait until the execution of proposal!")
+        //     }
+
+        //     if self.proposal_denied_status == true {
+
+        //     println!("you can successfully redeem you collateral as community is not interested in your issued bonds");
+               
+        //     }
+
+        //     //REDEEM
+        //     self.
+            
+        // }
 
         pub fn get_address_issued_bonds(&self) -> ComponentAddress {
 

@@ -22,7 +22,17 @@ pub enum EventType {
 
     QUORUM_NOT_MET,
 
-    QUORUM_MET
+    QUORUM_MET,
+
+    CHECK_BOND_ISSUER_BALANCE,
+
+    LIQUIDATED_COLLATERAL,
+
+    TAKE_OUT_INVESTED_XRDs,
+
+    PUT_IN_MONEY_PLUS_INTEREST,
+
+    CLAIM_INVESTED_XRDs_PLUS_INTEREST,
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
@@ -113,13 +123,24 @@ pub enum DaoEvent {
 
     ProposalQuorumNotMet(ProposalQuorumNotMet), // New event type
 
-    ProposalQuorumMet(ProposalQuorumMet)
+    ProposalQuorumMet(ProposalQuorumMet),
+
+    CheckBondIssuerBalance(CheckBondIssuerBalanceEvent),
+
+    LiquidatedCollateral(LiquidatedCollateralEvent),
+
+    TakeOutInvestedXRDs(TakeOutInvestedXRDsEvent),
+
+    PutInMoneyPlusInterest(PutInMoneyPlusInterestEvent),
+
+    ClaimInvestedXRDsPlusInterest(ClaimInvestedXRDsPlusInterestEvent),
 
     // ProposalCreationRightEveryone,
 
     // ProposalCreationRightTokenHolderThreshold(Decimal),
 
     // ProposalCreationRightAdmin
+
 
 }
 
@@ -231,4 +252,34 @@ pub struct ProposalQuorumMet {
     pub proposal_id: usize,
     pub minimum_quorum: usize,
     pub number_of_voters: usize,
+}
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct CheckBondIssuerBalanceEvent {
+    pub bond_creator_address: ComponentAddress,
+    pub balance: Decimal,
+}
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct LiquidatedCollateralEvent {
+    pub bond_creator_address: ComponentAddress,
+    pub liquidated_amount: Decimal,
+}
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct TakeOutInvestedXRDsEvent {
+    pub bond_creator_address: ComponentAddress,
+    pub taken_out_amount: Decimal,
+}
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct PutInMoneyPlusInterestEvent {
+    pub bond_creator_address: ComponentAddress,
+    pub amount: Decimal,
+}
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct ClaimInvestedXRDsPlusInterestEvent {
+    pub bond_creator_address: ComponentAddress,
+    pub claimed_amount: Decimal,
 }

@@ -1497,9 +1497,23 @@ mod radixdao {
 
             let redeemed_collateral= latest_bond_component.liquidate_collateral();
 
+            let liquidated_amount = redeemed_collateral.amount();
+
             self.liquidated_collateral = Vault::new(redeemed_collateral.resource_address());
 
             self.liquidated_collateral.put(redeemed_collateral);
+
+            let event_metadata = LiquidatedCollateralEvent {
+                bond_creator_address,
+                liquidated_amount,
+            };
+    
+            Runtime::emit_event(PandaoEvent {
+                event_type: EventType::LIQUIDATED_COLLATERAL,
+                dao_type: DaoType::Investment,
+                component_address: Runtime::global_address(),
+                meta_data: DaoEvent::LiquidatedCollateral(event_metadata),
+            });
         }
 
         pub fn claim_the_invested_XRDs_plus_interest(&mut self, bond_creator_address: ComponentAddress){
@@ -1520,7 +1534,21 @@ mod radixdao {
             
             let claimed_invested_xrd_plus_interest= latest_bond_component.claim_the_invested_XRDs_plus_interest();
 
+            let claimed_amount = claimed_invested_xrd_plus_interest.amount();
+
             self.shares.put(claimed_invested_xrd_plus_interest);
+
+            let event_metadata = ClaimInvestedXRDsPlusInterestEvent {
+                bond_creator_address,
+                claimed_amount,
+            };
+    
+            Runtime::emit_event(PandaoEvent {
+                event_type: EventType::CLAIM_INVESTED_XRDs_PLUS_INTEREST,
+                dao_type: DaoType::Investment,
+                component_address: Runtime::global_address(),
+                meta_data: DaoEvent::ClaimInvestedXRDsPlusInterest(event_metadata),
+            });
 
         }
 
@@ -1545,6 +1573,18 @@ mod radixdao {
             
             let taken_out_invested_amount= latest_bond_component.take_out_the_invested_XRDs_by_the_community();
 
+            let event_metadata = TakeOutInvestedXRDsEvent {
+                bond_creator_address,
+                taken_out_amount: taken_out_invested_amount.amount(),
+            };
+
+            Runtime::emit_event(PandaoEvent {
+                event_type: EventType::TAKE_OUT_INVESTED_XRDs,
+                dao_type: DaoType::Investment,
+                component_address: Runtime::global_address(),
+                meta_data: DaoEvent::TakeOutInvestedXRDs(event_metadata),
+            });
+
             taken_out_invested_amount
 
         }
@@ -1566,8 +1606,24 @@ mod radixdao {
 
             let latest_bond_component =
                 bond_components.last_mut().expect("No bond component found");
+
+            let amount = borrowed_xrd_with_interest.amount();
             
-            latest_bond_component.put_in_money_plus_interest_for_the_community_to_redeem(borrowed_xrd_with_interest)
+            latest_bond_component.put_in_money_plus_interest_for_the_community_to_redeem(borrowed_xrd_with_interest);
+
+
+            // Emit PutInMoneyPlusInterestEvent
+            let event_metadata = PutInMoneyPlusInterestEvent {
+                bond_creator_address,
+                amount,
+            };
+
+            Runtime::emit_event(PandaoEvent {
+                event_type: EventType::PUT_IN_MONEY_PLUS_INTEREST,
+                dao_type: DaoType::Investment,
+                component_address: Runtime::global_address(),
+                meta_data: DaoEvent::PutInMoneyPlusInterest(event_metadata),
+            });
         }
 
         pub fn check_the_balance_of_bond_issuer(&mut self, bond_creator_address: ComponentAddress)
@@ -1587,8 +1643,22 @@ mod radixdao {
 
             let latest_bond_component =
                 bond_components.last_mut().expect("No bond component found");
+
+            let balance = latest_bond_component.check_the_balance_of_bond_issuer();
+
+            let event_metadata = CheckBondIssuerBalanceEvent {
+                bond_creator_address,
+                balance,
+            };
+
+            Runtime::emit_event(PandaoEvent {
+                event_type: EventType::CHECK_BOND_ISSUER_BALANCE,
+                dao_type: DaoType::Investment,
+                component_address: Runtime::global_address(),
+                meta_data: DaoEvent::CheckBondIssuerBalance(event_metadata),
+            });
             
-            latest_bond_component.check_the_balance_of_bond_issuer()
+            balance
         }
 
 

@@ -509,7 +509,7 @@ mod radixdao {
         pub fn withdraw_power(&mut self, voting_power: Bucket) -> Bucket {
             // put the voting power back
             assert!(
-                !self.current_praposals.is_empty(),
+                self.current_praposals.is_empty(),
                 "token can not be sold when there are active praposals or incomplete proposals"
             );
 
@@ -1040,10 +1040,10 @@ mod radixdao {
             nft_as_collateral: Bucket, //OK -> Account address is of ComponentAddress Type
         ) -> Global<ZeroCouponBond> {
             // Ensure the address has not created any bonds already
-            assert!(
-                !self.zero_coupon_bond.contains_key(&your_address),
-                "This address has already created a bond and cannot create another."
-            );
+            // assert!(
+            //     !self.zero_coupon_bond.contains_key(&your_address),
+            //     "This address has already created a bond and cannot create another."
+            // );
 
             let collateral_resource_address = nft_as_collateral.resource_address();
 
@@ -1479,7 +1479,7 @@ mod radixdao {
             return Err(format!("proposal with id : {proposal_id} not found"));
         }
 
-        pub fn liquidated_collateral (&mut self, bond_creator_address: ComponentAddress) {
+        pub fn liquidate_collateral (&mut self, bond_creator_address: ComponentAddress) {
 
             assert!(
                 self.zero_coupon_bond.contains_key(&bond_creator_address),

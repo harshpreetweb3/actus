@@ -1,0 +1,38 @@
+ CALL_METHOD
+             Address("account_tdx_2_12xt5gudq8x6dgy06aj6y8sfa8c3rpr4dgsdaesuuq2cq7q3fgy32wc")
+             "withdraw"
+             Address("resource_tdx_2_1t4dctja7faucnhrf8slujl3ykn5xn72nx5wdkug9j7hxutl4amr2y0")
+             Decimal("1")
+;
+
+ TAKE_FROM_WORKTOP
+             Address("resource_tdx_2_1t4dctja7faucnhrf8slujl3ykn5xn72nx5wdkug9j7hxutl4amr2y0")
+             Decimal("1")
+             Bucket("bucket1")
+;
+
+CALL_METHOD
+Address("component_tdx_2_1cz7ypauedktssrgy69wqpsf645txx0q6r5f7khfees2pe2nh8ym7zd")
+"create_zero_coupon_bond"
+"Principal at Maturity"
+"PAM"
+"#1"
+Decimal("2")
+"xrd"
+1701039000u64
+1695849000u64
+Decimal("40")
+0u64
+"long"
+Decimal("40")
+Decimal("100")
+Address("account_tdx_2_12xt5gudq8x6dgy06aj6y8sfa8c3rpr4dgsdaesuuq2cq7q3fgy32wc")
+Bucket("bucket1")
+;   
+
+
+ CALL_METHOD
+             Address("account_tdx_2_12xt5gudq8x6dgy06aj6y8sfa8c3rpr4dgsdaesuuq2cq7q3fgy32wc")
+             "deposit_batch"
+             Expression("ENTIRE_WORKTOP")
+         ;

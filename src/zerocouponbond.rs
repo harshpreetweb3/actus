@@ -188,11 +188,11 @@
                 }
             }
 
-            //LIQUIDATE COLLATERAL
-            //ONLY COMMUNITY CAN CALL THIS
+            // LIQUIDATE COLLATERAL
+            // ONLY COMMUNITY CAN CALL THIS
             pub fn liquidate_collateral(&mut self) -> Bucket {
 
-                //AFTER MATURITY DATE
+                // AFTER MATURITY DATE
                 let now: Instant = Clock::current_time_rounded_to_seconds();
                 let current_time_seconds: u64 = now.seconds_since_unix_epoch as u64;
                 //CHECK IF MATURITY DATE PASSED

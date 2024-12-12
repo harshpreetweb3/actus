@@ -960,14 +960,16 @@ mod radixdao {
             &mut self,
             token: Bucket,
             againsts: bool,
-            account: Global<Account>,
+            // account: Global<Account>,
+            your_address: ComponentAddress,
             proposal_id: usize,
         ) -> Bucket {
-            let owner_role_of_voter = account.get_owner_role();
-            Runtime::assert_access_rule(owner_role_of_voter.rule);
+            // let owner_role_of_voter = account.get_owner_role();
+            // Runtime::assert_access_rule(owner_role_of_voter.rule);
 
             // Find the proposal by proposal_id
             let mut proposal_option = None;
+            
             for (_, inner_map) in &self.current_praposals {
                 if let Some(proposal) = inner_map.get(&proposal_id) {
                     proposal_option = Some(proposal.clone());
@@ -983,7 +985,7 @@ mod radixdao {
                 );
 
                 // Get the voter address from the account
-                let voter_address = account.address();
+                let voter_address = your_address;
 
                 let mut vote_caster_addresses = proposal.get_vote_caster_addresses();
 

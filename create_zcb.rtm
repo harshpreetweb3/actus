@@ -12,7 +12,7 @@
 ;
 
 CALL_METHOD
-Address("component_tdx_2_1czc4pnp0xa6rlsxkn0sgxuw2ujf8uh07xylaelu6pzaka576x7jdyu")
+Address("component_tdx_2_1cqejww07gsxjrtc0jsjce3n3huacpj0dam8trvdccytzd40pexrvyc")
 "create_zero_coupon_bond"
 "Principal at Maturity"
 "PAM"
@@ -24,7 +24,7 @@ Decimal("2")
 Decimal("40")
 0u64
 "long"
-Decimal("40")
+40u64
 Decimal("100")
 Address("account_tdx_2_128e6fmjkhjqx0n8h9562rrvstl883wq22pzea4ucnnx0762ptlch4s")
 Bucket("bucket1")

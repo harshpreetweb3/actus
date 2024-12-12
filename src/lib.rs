@@ -1040,10 +1040,10 @@ mod radixdao {
             nft_as_collateral: Bucket, //OK -> Account address is of ComponentAddress Type
         ) -> Global<ZeroCouponBond> {
             // Ensure the address has not created any bonds already
-            assert!(
-                !self.zero_coupon_bond.contains_key(&your_address),
-                "This address has already created a bond and cannot create another."
-            );
+            // assert!(
+            /////     !self.zero_coupon_bond.contains_key(&your_address),
+            //     "This address has already created a bond and cannot create another."
+            // );
 
             let collateral_resource_address = nft_as_collateral.resource_address();
 

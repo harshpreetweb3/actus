@@ -238,6 +238,7 @@ pub struct ZeroCouponBondCreation {
     pub number_of_bonds: Decimal,
     pub creator_address: ComponentAddress,
     pub collateral_resource_address: ResourceAddress,
+    pub bond_id : usize
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]

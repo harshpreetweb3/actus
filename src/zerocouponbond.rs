@@ -66,6 +66,7 @@
                 number_of_bonds: Decimal,       // number of bonds to mint
                 nft_as_collateral: Bucket,      // collateral for bonds
             ) -> Global<ZeroCouponBond> {
+
                 let bucket_of_bonds: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
                     .divisibility(DIVISIBILITY_NONE)
                     .metadata(metadata!(
@@ -100,6 +101,7 @@
                 .instantiate()
                 .prepare_to_globalize(OwnerRole::None)
                 .globalize()
+                
             }
 
             pub fn get_resource_address(&self) -> ResourceAddress{

@@ -45,7 +45,8 @@ mod radixdao {
         buy_back_price: Decimal,
 
         // Add ZeroCouponBond component
-        zero_coupon_bond: HashMap<ComponentAddress, Vec<Global<ZeroCouponBond>>>,
+        // zero_coupon_bond: HashMap<ComponentAddress, Vec<Global<ZeroCouponBond>>>,
+        zero_coupon_bond: HashMap<ComponentAddress, HashMap<usize, Global<ZeroCouponBond>>>,
 
         contributors: HashMap<ComponentAddress, Decimal>,
 
@@ -469,7 +470,7 @@ mod radixdao {
             assert!(
                 (self.token_price * token_amount) <= xrd.amount(),
                 "you are paying an insufficient amount"
-            );
+            ); 
 
             let collected_xrd = xrd.take(self.token_price * token_amount);
 
@@ -545,7 +546,7 @@ mod radixdao {
         }
 
         //get_unique_random_number
-        pub fn get_proposal_id() -> u64 {
+        pub fn get_proposal_id_or_unique_id() -> u64 {
             let current_epoch = Runtime::current_epoch();
             let unique_number: u64 = current_epoch.number();
             unique_number
@@ -623,6 +624,7 @@ mod radixdao {
 
             let global_proposal_component: Global<TokenWeightProposal>;
 
+            //Equality || Resource Hold
             match voting_type {
                 VotingType::ResourceHold => {
                     (global_proposal_component, _) = TokenWeightProposal::new(
@@ -658,28 +660,11 @@ mod radixdao {
                 }
             }
 
-            // let (global_proposal_component, _) = TokenWeightProposal::new(
-            //     title.clone(),
-            //     description.clone(),
-            //     minimun_quorum,
-            //     start_time,
-            //     end_time,
-            //     self.owner_token_addresss.clone(),
-            //     self.dao_token_address.clone(),
-            //     address_issued_bonds_to_sell.clone(),
-            //     target_xrd_amount.clone(),
-            //     proposal_creator_address,
-            //     amount_of_tokens_should_be_minted,
-            //     VotingType::Equality
-            // );
-
-            // global_proposal_component.callme("string".into()) ;
-
             let start_time_ts: i64 = start_time.to_instant().seconds_since_unix_epoch;
             let end_time_ts: i64 = end_time.to_instant().seconds_since_unix_epoch;
 
             //unique-id-generation
-            let proposal_id: usize = Self::get_proposal_id()
+            let proposal_id: usize = Self::get_proposal_id_or_unique_id()
                 .try_into()
                 .expect("couldn't get called successfully");
             //populate HashMap with newly created proposal
@@ -690,31 +675,6 @@ mod radixdao {
                 .or_insert_with(HashMap::new);
 
             inner_map.insert(proposal_id, global_proposal_component);
-
-            // let praposal_metadata = PraposalMetadata {
-            //     title,
-            //     description,
-            //     minimum_quorum: minimun_quorum.into(),
-            //     end_time_ts,
-            //     start_time_ts,
-            //     owner_token_address: self.owner_token_addresss.clone(),
-            //     component_address: global_proposal_component.address(),
-            //     address_issued_bonds_to_sell,
-            //     target_xrd_amount,
-            //     proposal_creator_address,
-            //     amount_of_tokens_should_be_minted,
-            //     proposal_id,
-            //     governance_token_or_owner_token_address: governance_token_or_owner_token_address
-            //         .resource_address(),
-            // };
-            // let component_address = Runtime::global_address();
-
-            // Runtime::emit_event(PandaoEvent {
-            //     event_type: EventType::PRAPOSAL,
-            //     dao_type: DaoType::Investment,
-            //     meta_data: DaoEvent::PraposalDeployment(praposal_metadata),
-            //     component_address,
-            // });
 
             match voting_type {
                 VotingType::ResourceHold => {
@@ -1039,13 +999,8 @@ mod radixdao {
             price: u64,
             number_of_bonds: Decimal,
             your_address: ComponentAddress,
-            nft_as_collateral: Bucket, //OK -> Account address is of ComponentAddress Type
+            nft_as_collateral: Bucket,
         ) -> Global<ZeroCouponBond> {
-            // Ensure the address has not created any bonds already
-            // assert!(
-            //     !self.zero_coupon_bond.contains_key(&your_address),
-            //     "This address has already created a bond and cannot create another."
-            // );
 
             let collateral_resource_address = nft_as_collateral.resource_address();
 
@@ -1065,11 +1020,12 @@ mod radixdao {
                 nft_as_collateral,
             );
 
-            self.zero_coupon_bond
-                .entry(your_address)
-                .or_insert_with(Vec::new)
-                .push(bond_component);
-            // self.zero_coupon_bond = Some(bond_component);
+            //generate unique identification
+            let bond_id : usize = Self::get_proposal_id_or_unique_id().try_into().expect("couldn't generate unique bond id");
+
+            let inner_map = self.zero_coupon_bond.entry(your_address).or_insert_with(HashMap::new);
+
+            inner_map.insert(bond_id, bond_component);
 
             // Emit the ZeroCouponBondCreation event
             let event_metadata = ZeroCouponBondCreation {
@@ -1088,10 +1044,11 @@ mod radixdao {
                 number_of_bonds,
                 creator_address: your_address,
                 collateral_resource_address,
+                bond_id
             };
 
             Runtime::emit_event(PandaoEvent {
-                event_type: EventType::ZERO_COUPON_BOND_CREATION, // You can define a specific event type for bond creation if needed
+                event_type: EventType::ZERO_COUPON_BOND_CREATION, 
                 dao_type: DaoType::Investment,
                 component_address: Runtime::global_address(),
                 meta_data: DaoEvent::ZeroCouponBondCreation(event_metadata),
@@ -1111,7 +1068,7 @@ mod radixdao {
         pub fn purchase_bond(
             &mut self,
             bond_creator_address: ComponentAddress,
-            // uid : Uid,
+            bond_id : usize,  
             payment: Bucket
         ) -> Bucket {
             assert!(
@@ -1119,115 +1076,57 @@ mod radixdao {
                 "No bonds created by the specified address."
             );
 
-            // Retrieve the most recent bond component created by the bond creator
-            let bond_components = self
-                .zero_coupon_bond
-                .get_mut(&bond_creator_address)
-                .unwrap();
+            let mut zcb_bond_component = None;
 
-            //*we can restrict a creator in terms of bond creation
-            let latest_bond_component =
-                bond_components.last_mut().expect("No bond component found");
-
-            // Purchase bond from the latest bond component
-            let (purchased_bond, payment) = latest_bond_component.purchase_bond(payment);
+            for (_, inner_map) in &self.zero_coupon_bond {
+                if let Some(bond_component) = inner_map.get(&bond_id) {
+                    zcb_bond_component = Some(bond_component.clone());
+                    break;
+                }
+            } 
+            
+            let (purchased_bond, payment) = zcb_bond_component.unwrap().purchase_bond(payment);
             self.update_bond_vault_and_store(purchased_bond);
             payment
-        }
+        }   
 
         // New method to sell a bond
         pub fn sell_bond(
             &mut self,
             bond_creator_address: ComponentAddress,
-            // bond: Bucket,
+            bond_id : usize
         ) {
             assert!(
                 self.zero_coupon_bond.contains_key(&bond_creator_address),
                 "No bonds created by the specified address."
             );
 
-            // Retrieve the most recent bond component created by the bond creator
-            let bond_components = self
-                .zero_coupon_bond
-                .get_mut(&bond_creator_address)
-                .unwrap();
+            let mut zcb_bond_component = None;
 
-            let latest_bond_component =
-                bond_components.last_mut().expect("No bond component found");
+            for (_, inner_map) in &self.zero_coupon_bond {
+                if let Some(bond_component) = inner_map.get(&bond_id) {
+                    zcb_bond_component = Some(bond_component.clone());
+                    break;
+                }
+            } 
 
-            // Sell bond from the latest bond component
-
-            //access the bond resouce address
-            let bond_resource_address = latest_bond_component.get_resource_address();
+            let bond_resource_address = zcb_bond_component.unwrap().get_resource_address();
 
             //access the bond
             let vault = self.bonds.get_mut(&bond_resource_address).unwrap();
 
             let purchased_bond = vault.take(1);
 
-            let principal_plus_interest = latest_bond_component.sell_the_bond(purchased_bond);
+            let principal_plus_interest =  zcb_bond_component.unwrap().sell_the_bond(purchased_bond);
 
             self.shares.put(principal_plus_interest);
 
         }
 
-
-
-        // New method to check bond maturity
-        pub fn check_bond_maturity(&self, bond_creator_address: ComponentAddress) -> i64 {
-            assert!(
-                self.zero_coupon_bond.contains_key(&bond_creator_address),
-                "No bonds created by the specified address."
-            );
-
-            // Retrieve the most recent bond component created by the bond creator
-            let bond_components = self.zero_coupon_bond.get(&bond_creator_address).unwrap();
-            let latest_bond_component = bond_components.last().expect("No bond component found");
-
-            // Check bond maturity of the latest bond component
-            latest_bond_component.check_the_maturity_of_bonds()
-        }
-
-        // New method to get bond details
-        pub fn get_bond_details(&self, bond_creator_address: ComponentAddress) -> BondDetails {
-            assert!(
-                self.zero_coupon_bond.contains_key(&bond_creator_address),
-                "No bonds created by the specified address."
-            );
-
-            // Retrieve the most recent bond component created by the bond creator
-            let bond_components = self.zero_coupon_bond.get(&bond_creator_address).unwrap();
-            let latest_bond_component = bond_components.last().expect("No bond component found");
-
-            // Get bond details of the latest bond component
-            latest_bond_component.get_bond_details()
-        }
-
-        // Function to retrieve bond creators and their bond component addresses
-        pub fn get_bond_creators(&self) -> HashMap<ComponentAddress, Vec<Global<ZeroCouponBond>>> {
-            self.zero_coupon_bond.clone() // Return the HashMap of bond creators and their bonds
-        }
-
+    
         // New function to get all bond creator addresses
         pub fn get_bond_creator_addresses(&self) -> Vec<ComponentAddress> {
             self.zero_coupon_bond.keys().cloned().collect() // Return a list of bond creator addresses
-        }
-
-        // Function to get bond creator address and bond details
-        pub fn get_bond_creator_and_details(&self) -> Vec<(ComponentAddress, Vec<BondDetails>)> {
-            let mut result = Vec::new();
-
-            // Iterate through each bond creator address and their bond components
-            for (creator_address, bonds) in &self.zero_coupon_bond {
-                let mut bond_details = Vec::new();
-                for bond in bonds {
-                    bond_details.push(bond.get_bond_details());
-                }
-                // Push the creator address and corresponding bond details to the result
-                result.push((*creator_address, bond_details));
-            }
-
-            result
         }
 
         pub fn send_money_to_dao_treasury(
@@ -1481,23 +1380,23 @@ mod radixdao {
             return Err(format!("proposal with id : {proposal_id} not found"));
         }
 
-        pub fn liquidate_collateral (&mut self, bond_creator_address: ComponentAddress) {
+        pub fn liquidate_collateral (&mut self, bond_creator_address: ComponentAddress, bond_id : usize) {
 
             assert!(
                 self.zero_coupon_bond.contains_key(&bond_creator_address),
                 "No bonds created by the specified address."
             );
 
-            // Retrieve the most recent bond component created by the bond creator
-            let bond_components = self
-                .zero_coupon_bond
-                .get_mut(&bond_creator_address)
-                .unwrap();
+            let mut zcb_bond_component = None;
 
-            let latest_bond_component =
-                bond_components.last_mut().expect("No bond component found");
+            for (_, inner_map) in &self.zero_coupon_bond {
+                if let Some(bond_component) = inner_map.get(&bond_id) {
+                    zcb_bond_component = Some(bond_component.clone());
+                    break;
+                }
+            } 
 
-            let redeemed_collateral= latest_bond_component.liquidate_collateral();
+            let redeemed_collateral= zcb_bond_component.unwrap().liquidate_collateral();
 
             let liquidated_amount = redeemed_collateral.amount();
 
@@ -1518,23 +1417,23 @@ mod radixdao {
             });
         }
 
-        pub fn claim_the_invested_XRDs_plus_interest(&mut self, bond_creator_address: ComponentAddress){
+        pub fn claim_the_invested_XRDs_plus_interest(&mut self, bond_creator_address: ComponentAddress, bond_id : usize){
 
             assert!(
                 self.zero_coupon_bond.contains_key(&bond_creator_address),
                 "No bonds created by the specified address."
             );
 
-            // Retrieve the most recent bond component created by the bond creator
-            let bond_components = self
-                .zero_coupon_bond
-                .get_mut(&bond_creator_address)
-                .unwrap();
+            let mut zcb_bond_component = None;
 
-            let latest_bond_component =
-                bond_components.last_mut().expect("No bond component found");
+            for (_, inner_map) in &self.zero_coupon_bond {
+                if let Some(bond_component) = inner_map.get(&bond_id) {
+                    zcb_bond_component = Some(bond_component.clone());
+                    break;
+                }
+            } 
             
-            let claimed_invested_xrd_plus_interest= latest_bond_component.claim_the_invested_XRDs_plus_interest();
+            let claimed_invested_xrd_plus_interest= zcb_bond_component.unwrap().claim_the_invested_XRDs_plus_interest();
 
             let claimed_amount = claimed_invested_xrd_plus_interest.amount();
 
@@ -1591,7 +1490,7 @@ mod radixdao {
 
         }
 
-        pub fn put_in_money_plus_interest_for_the_community_to_redeem(&mut self, bond_creator_address: ComponentAddress, borrowed_xrd_with_interest : Bucket)
+        pub fn put_in_money_plus_interest_for_the_community_to_redeem(&mut self, bond_creator_address: ComponentAddress, borrowed_xrd_with_interest : Bucket, bond_id : usize)
        
         {
 
@@ -1600,18 +1499,18 @@ mod radixdao {
                 "No bonds created by the specified address."
             );
 
-            // Retrieve the most recent bond component created by the bond creator
-            let bond_components = self
-                .zero_coupon_bond
-                .get_mut(&bond_creator_address)
-                .unwrap();
+            let mut zcb_bond_component = None;
 
-            let latest_bond_component =
-                bond_components.last_mut().expect("No bond component found");
+            for (_, inner_map) in &self.zero_coupon_bond {
+                if let Some(bond_component) = inner_map.get(&bond_id) {
+                    zcb_bond_component = Some(bond_component.clone());
+                    break;
+                }
+            }
 
             let amount = borrowed_xrd_with_interest.amount();
             
-            latest_bond_component.put_in_money_plus_interest_for_the_community_to_redeem(borrowed_xrd_with_interest);
+            zcb_bond_component.unwrap().put_in_money_plus_interest_for_the_community_to_redeem(borrowed_xrd_with_interest);
 
 
             // Emit PutInMoneyPlusInterestEvent
@@ -1628,7 +1527,7 @@ mod radixdao {
             });
         }
 
-        pub fn check_the_balance_of_bond_issuer(&mut self, bond_creator_address: ComponentAddress)
+        pub fn check_the_balance_of_bond_issuer(&mut self, bond_creator_address: ComponentAddress, bond_id : usize)
        -> Decimal
         {
 
@@ -1637,16 +1536,16 @@ mod radixdao {
                 "No bonds created by the specified address."
             );
 
-            // Retrieve the most recent bond component created by the bond creator
-            let bond_components = self
-                .zero_coupon_bond
-                .get_mut(&bond_creator_address)
-                .unwrap();
+            let mut zcb_bond_component = None;
 
-            let latest_bond_component =
-                bond_components.last_mut().expect("No bond component found");
+            for (_, inner_map) in &self.zero_coupon_bond {
+                if let Some(bond_component) = inner_map.get(&bond_id) {
+                    zcb_bond_component = Some(bond_component.clone());
+                    break;
+                }
+            } 
 
-            let balance = latest_bond_component.check_the_balance_of_bond_issuer();
+            let balance = zcb_bond_component.unwrap().check_the_balance_of_bond_issuer();
 
             let event_metadata = CheckBondIssuerBalanceEvent {
                 bond_creator_address,

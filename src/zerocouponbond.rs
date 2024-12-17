@@ -131,33 +131,6 @@
                 self.collected_xrd.take(refund_amount)
             }
 
-            // pub fn check_the_maturity_of_bonds(&self) -> i64 {
-            //     let current_timestamp = Runtime::current_epoch().number();
-            //     let days_left = (self.maturity_date as i64 - current_timestamp as i64) / (24 * 60 * 60);
-            //     days_left
-            // }
-
-            // pub fn get_bond_details(&self) -> BondDetails {
-            //     let current_timestamp = Runtime::current_epoch().number();
-            //     let days_left = (self.maturity_date as i64 - current_timestamp as i64) / (24 * 60 * 60);
-
-            //     BondDetails {
-            //         contract_type: self.contract_type.clone(),
-            //         contract_role: self.contract_role.clone(),
-            //         contract_identifier: self.contract_identifier.clone(),
-            //         nominal_interest_rate: self.nominal_interest_rate,
-            //         currency: self.currency.clone(),
-            //         initial_exchange_date: self.initial_exchange_date,
-            //         maturity_date: self.maturity_date,
-            //         notional_principal: self.notional_principal,
-            //         discount: self.discount,
-            //         bond_position: self.bond_position.clone(),
-            //         price: self.price,
-            //         amount: self.bonds.amount(),
-            //         maturity_days_left: days_left,
-            //     }
-            // }
-
             pub fn check_the_maturity_of_bonds(&self) -> i64 {
                 
                 let current_epoch = Runtime::current_epoch().number();
@@ -234,6 +207,11 @@
             {
                 let balance = self.collected_xrd.amount();
                 balance
+            }
+
+            pub fn get_bond_u_id(&self) -> String{
+                let bond_u_id = self.contract_identifier.clone();
+                bond_u_id
             }
 
             // function to check the price of the bond

@@ -823,20 +823,6 @@ mod radixdao {
             all_proposals
         }
 
-        // fn execute_proposal(&self, proposal_id : usize){
-        //     let mut bond_creator_address_option : Option<ComponentAddress>  = None;
-        //     let mut target_xrd_amount_option : Option<Decimal> = None;
-        //     let mut proposal_option : Option<Global<TokenWeightProposal>> = None;
-
-        //     for(_, inner_map) in &self.current_praposals{
-        //         if let Some(proposal) = inner_map.get(&proposal_id){
-        //             proposal_option = Some(proposal.clone());
-
-        //         }
-        //     }
-
-        // }
-
         pub fn execute_proposal(&mut self, proposal_id: usize) {
             // First, find the proposal
             let mut proposal_option = None;
@@ -875,23 +861,37 @@ mod radixdao {
                     "Proposal can only be executed after the specified end time"
                 );
 
+                let bond_components = self
+                .zero_coupon_bond
+                .get_mut(&bond_creator_address)
+                .unwrap();
+
+                //*we can restrict a creator in terms of bond creation
+                let latest_bond_component =
+                bond_components.last_mut().expect("No bond component found");
+
+                let bond_uid = latest_bond_component.get_bond_u_id();
+
                 // Check if the minimum quorum is met
                 let number_of_voters = proposal.get_number_of_voters();
                 let minimum_quorum = proposal.get_minimum_quorum();
                 // let minimum_quorum = min_quo.0.to_u64().expect("Invalid minimum quorum value") as usize;
 
                 if number_of_voters < minimum_quorum {
+
                     // Emit an event indicating that the proposal cannot be executed due to insufficient participation
                     let event_metadata = ProposalQuorumNotMet {
                         proposal_id,
                         minimum_quorum: proposal.get_minimum_quorum(),
                         number_of_voters,
+                        bond_creator_address,
+                        contract_identity : bond_uid.clone()
                     };
         
                     let component_address = Runtime::global_address();
-        
+                    
                     Runtime::emit_event(PandaoEvent {
-                        event_type: EventType::QUORUM_NOT_MET,
+                        event_type: EventType::QUORUM_NOT_MET_AND_FAILED,
                         dao_type: DaoType::Investment,
                         component_address,
                         meta_data: DaoEvent::ProposalQuorumNotMet(event_metadata),
@@ -912,36 +912,31 @@ mod radixdao {
                 let payment = self.shares.take(target_xrd_amount);
 
                 // Call the purchase_bond function
-                let remaining = self.purchase_bond(bond_creator_address, payment);
+                let remaining = self.purchase_bond(bond_creator_address.clone(), payment);
+
+                
+               
 
                 // Handle remaining funds and received bond NFT
                 self.shares.put(remaining);
-
-                // let praposal_metadata = PraposalExecute {
-                //     praposal_address: proposal.address(),
-                //     proposal_id, // purchased_bond_address,
-                //                  // purchased_amount: purchased_amt
-                // };
-
-                // let component_address = Runtime::global_address();
-
-                // Runtime::emit_event(PandaoEvent {
-                //     event_type: EventType::EXECUTE_PROPOSAL,
-                //     dao_type: DaoType::Investment,
-                //     meta_data: DaoEvent::ProposalExecute(praposal_metadata),
-                //     component_address,
-                // });
 
                 let event_metadata = ProposalQuorumMet {
                     proposal_id,
                     minimum_quorum: proposal.get_minimum_quorum(),
                     number_of_voters,
+                    //bond creator address
+                    bond_creator_address,
+                    contract_identity : bond_uid
                 };
     
                 let component_address = Runtime::global_address();
     
+                //what to emit?
+                //1. success or unsuccess
+                //2. bond creator address + contract || bond id
+                
                 Runtime::emit_event(PandaoEvent {
-                    event_type: EventType::QUORUM_MET,
+                    event_type: EventType::QUORUM_MET_AND_SUCCESS,
                     dao_type: DaoType::Investment,
                     component_address,
                     meta_data: DaoEvent::ProposalQuorumMet(event_metadata),

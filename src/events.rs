@@ -20,9 +20,9 @@ pub enum EventType {
 
     ZERO_COUPON_BOND_CREATION,
 
-    QUORUM_NOT_MET,
+    QUORUM_NOT_MET_AND_FAILED,
 
-    QUORUM_MET,
+    QUORUM_MET_AND_SUCCESS,
 
     CHECK_BOND_ISSUER_BALANCE,
 
@@ -184,13 +184,6 @@ pub struct PandaoEvent {
     
     pub meta_data: DaoEvent
 }
-
-// #[derive(ScryptoSbor, ScryptoEvent)]
-// pub struct PandaoAdditionalEvent {
-    
-//     pub meta_data: ProposalRightEvent
-// }
-
 // create an event for community_creation
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub struct BoughtToken {
@@ -245,6 +238,8 @@ pub struct ProposalQuorumNotMet {
     pub proposal_id: usize,
     pub minimum_quorum: usize,
     pub number_of_voters: usize,
+    pub bond_creator_address : ComponentAddress,
+    pub contract_identity : String
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
@@ -252,6 +247,8 @@ pub struct ProposalQuorumMet {
     pub proposal_id: usize,
     pub minimum_quorum: usize,
     pub number_of_voters: usize,
+    pub bond_creator_address : ComponentAddress,
+    pub contract_identity : String
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]

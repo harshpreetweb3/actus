@@ -897,7 +897,7 @@ mod radixdao {
                         meta_data: DaoEvent::ProposalQuorumNotMet(event_metadata),
                     });
         
-                    panic!("The proposal cannot be executed due to insufficient participation");
+                    // panic!("The proposal cannot be executed due to insufficient participation");
                 }
 
                 // Check if the treasury has enough XRD

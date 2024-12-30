@@ -12,6 +12,8 @@ pub enum EventType {
 
     PRAPOSAL,
 
+    PROPOSAL_TO_MINT_MORE_TOKENS,
+
     VOTE,
 
     EXECUTE_PROPOSAL,

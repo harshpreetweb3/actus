@@ -4,6 +4,8 @@ use scrypto::prelude::*;
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub enum EventType {
 
+    PROPOSAL_TO_MINT_MORE_TOKENS,
+    
     DEPLOYMENT,
 
     TOKEN_BOUGHT,
@@ -33,6 +35,8 @@ pub enum EventType {
     PUT_IN_MONEY_PLUS_INTEREST,
 
     CLAIM_INVESTED_XRDs_PLUS_INTEREST,
+
+    FAILED_CLAIM_INVESTED_XRDs_PLUS_INTEREST,
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
@@ -134,6 +138,8 @@ pub enum DaoEvent {
     PutInMoneyPlusInterest(PutInMoneyPlusInterestEvent),
 
     ClaimInvestedXRDsPlusInterest(ClaimInvestedXRDsPlusInterestEvent),
+
+    ClaimInvestedXRDsPlusInterestError(ClaimInvestedXRDsPlusInterestErrorEvent),
 
     // ProposalCreationRightEveryone,
 
@@ -279,4 +285,12 @@ pub struct PutInMoneyPlusInterestEvent {
 pub struct ClaimInvestedXRDsPlusInterestEvent {
     pub bond_creator_address: ComponentAddress,
     pub claimed_amount: Decimal,
+    pub amount_required_by_the_community : Decimal
+}
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct ClaimInvestedXRDsPlusInterestErrorEvent {
+    pub bond_creator_address: ComponentAddress,
+    pub required_amount_by_the_community: Decimal,
+    pub balance_of_bond_issuer : Decimal
 }

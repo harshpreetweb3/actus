@@ -187,6 +187,18 @@
 
             }
 
+            //XRDs required by the community
+            pub fn balance_required_by_the_community(&self) -> Decimal{
+                
+                let bond_price = self.price;
+
+                let interest_amount = (self.nominal_interest_rate/100)*bond_price;
+
+                let total_amount = bond_price + interest_amount;
+
+                total_amount
+            }
+
             pub fn take_out_the_invested_XRDs_by_the_community(&mut self)
 
             -> Bucket

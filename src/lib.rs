@@ -114,6 +114,11 @@ mod radixdao {
                         "icon_url" => Url::of(&org_ico_url), locked;
                     }
                 ))
+                .mint_roles(mint_roles! {
+                    // A good minting rule is described in example 08
+                    minter => rule!(allow_all);
+                    minter_updater => rule!(deny_all);
+                })
                 .mint_initial_supply(1)
                 .into();
 
@@ -167,8 +172,6 @@ mod radixdao {
                         proposal_creation_right: ProposalCreationRight::EVERYONE,
 
                         liquidated_collateral: Vault::new(XRD),
-
-
                     }
                     .instantiate()
                     .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
@@ -862,41 +865,40 @@ mod radixdao {
                 );
 
                 let bond_components = self
-                .zero_coupon_bond
-                .get_mut(&bond_creator_address)
-                .unwrap();
+                    .zero_coupon_bond
+                    .get_mut(&bond_creator_address)
+                    .unwrap();
 
                 //*we can restrict a creator in terms of bond creation
                 let latest_bond_component =
-                bond_components.last_mut().expect("No bond component found");
+                    bond_components.last_mut().expect("No bond component found");
 
                 let bond_uid = latest_bond_component.get_bond_u_id();
 
                 // Check if the minimum quorum is met
-                let number_of_voters = proposal.get_number_of_voters();
+                let number_of_voters = proposal.get_number_of_voters(); //inline attribute on fn definition
                 let minimum_quorum = proposal.get_minimum_quorum();
                 // let minimum_quorum = min_quo.0.to_u64().expect("Invalid minimum quorum value") as usize;
 
                 if number_of_voters < minimum_quorum {
-
                     // Emit an event indicating that the proposal cannot be executed due to insufficient participation
                     let event_metadata = ProposalQuorumNotMet {
                         proposal_id,
                         minimum_quorum: proposal.get_minimum_quorum(),
                         number_of_voters,
                         bond_creator_address,
-                        contract_identity : bond_uid.clone()
+                        contract_identity: bond_uid.clone(),
                     };
-        
+
                     let component_address = Runtime::global_address();
-                    
+
                     Runtime::emit_event(PandaoEvent {
                         event_type: EventType::QUORUM_NOT_MET_AND_FAILED,
                         dao_type: DaoType::Investment,
                         component_address,
                         meta_data: DaoEvent::ProposalQuorumNotMet(event_metadata),
                     });
-        
+
                     // panic!("The proposal cannot be executed due to insufficient participation");
                 }
 
@@ -914,9 +916,6 @@ mod radixdao {
                 // Call the purchase_bond function
                 let remaining = self.purchase_bond(bond_creator_address.clone(), payment);
 
-                
-               
-
                 // Handle remaining funds and received bond NFT
                 self.shares.put(remaining);
 
@@ -926,15 +925,15 @@ mod radixdao {
                     number_of_voters,
                     //bond creator address
                     bond_creator_address,
-                    contract_identity : bond_uid
+                    contract_identity: bond_uid,
                 };
-    
+
                 let component_address = Runtime::global_address();
-    
+
                 //what to emit?
                 //1. success or unsuccess
                 //2. bond creator address + contract || bond id
-                
+
                 Runtime::emit_event(PandaoEvent {
                     event_type: EventType::QUORUM_MET_AND_SUCCESS,
                     dao_type: DaoType::Investment,
@@ -964,7 +963,7 @@ mod radixdao {
 
             // Find the proposal by proposal_id
             let mut proposal_option = None;
-            
+
             for (_, inner_map) in &self.current_praposals {
                 if let Some(proposal) = inner_map.get(&proposal_id) {
                     proposal_option = Some(proposal.clone());
@@ -1107,7 +1106,7 @@ mod radixdao {
             &mut self,
             bond_creator_address: ComponentAddress,
             // uid : Uid,
-            payment: Bucket
+            payment: Bucket,
         ) -> Bucket {
             assert!(
                 self.zero_coupon_bond.contains_key(&bond_creator_address),
@@ -1163,10 +1162,7 @@ mod radixdao {
             let principal_plus_interest = latest_bond_component.sell_the_bond(purchased_bond);
 
             self.shares.put(principal_plus_interest);
-
         }
-
-
 
         // New method to check bond maturity
         pub fn check_bond_maturity(&self, bond_creator_address: ComponentAddress) -> i64 {
@@ -1306,130 +1302,187 @@ mod radixdao {
         //     }
         // }
 
-        // pub fn create_proposal_to_mint_more_dao_tokens(
-        //     &mut self,
-        //     title: String,
-        //     description: String,
-        //     minimun_quorum: u8,
-        //     amount_of_tokens_should_be_minted: Option<usize>,
-        //     start_time: scrypto::time::UtcDateTime,
-        //     end_time: scrypto::time::UtcDateTime,
-        //     proposal_creator_address: Option<ComponentAddress>,
-        //     governance_token_or_owner_token_address: Bucket,
-        //     voting_type: VotingType,
-        // ) -> (
-        //     Global<crate::proposal::pandao_praposal::TokenWeightProposal>,
-        //     String,
-        //     Bucket,
-        // ) {
-        //     match self.proposal_creation_right {
-        //         ProposalCreationRight::EVERYONE => {
-        //             assert_eq!(
-        //                 governance_token_or_owner_token_address.resource_address(),
-        //                 self.dao_token_address,
-        //                 "wrong voting token supplied! please make sure that you supply DAO Governance Token"
-        //             );
+        pub fn create_proposal_to_mint_more_dao_tokens(
+            &mut self,
+            title: String,
+            description: String,
+            minimun_quorum: u8,
+            amount_of_tokens_should_be_minted: Option<usize>,
+            start_time: scrypto::time::UtcDateTime,
+            end_time: scrypto::time::UtcDateTime,
+            proposal_creator_address: Option<ComponentAddress>,
+            governance_token_or_owner_token_address: Bucket,
+            voting_type: VotingType,
+        ) -> (
+            Global<crate::proposal::pandao_praposal::TokenWeightProposal>,
+            String,
+            Bucket,
+        ) {
+            match self.proposal_creation_right {
+                ProposalCreationRight::EVERYONE => {
+                    assert_eq!(
+                        governance_token_or_owner_token_address.resource_address(),
+                        self.dao_token_address,
+                        "wrong voting token supplied! please make sure that you supply DAO Governance Token"
+                    );
 
-        //             assert!(
-        //                 governance_token_or_owner_token_address.amount() >= Decimal::one(),
-        //                 "Proposal creator must have at least one governance token to create a proposal"
-        //             );
+                    assert!(
+                        governance_token_or_owner_token_address.amount() >= Decimal::one(),
+                        "Proposal creator must have at least one governance token to create a proposal"
+                    );
 
-        //             //allow proposal creation
-        //         }
-        //         ProposalCreationRight::TOKEN_HOLDER_THRESHOLD(threshold) => {
-        //             assert_eq!(
-        //                 governance_token_or_owner_token_address.resource_address(),
-        //                 self.dao_token_address,
-        //                 "wrong voting token supplied! please make sure that you supply DAO Governance Token"
-        //             );
+                    //allow proposal creation
+                }
+                ProposalCreationRight::TOKEN_HOLDER_THRESHOLD(threshold) => {
+                    assert_eq!(
+                        governance_token_or_owner_token_address.resource_address(),
+                        self.dao_token_address,
+                        "wrong voting token supplied! please make sure that you supply DAO Governance Token"
+                    );
 
-        //             assert!(
-        //                 governance_token_or_owner_token_address.amount() >= threshold,
-        //                 "Proposal creator does not have enough tokens to meet the threshold"
-        //             );
-        //         }
-        //         ProposalCreationRight::ADMIN => {
-        //             assert_eq!(
-        //                 governance_token_or_owner_token_address.resource_address(),
-        //                 self.owner_token_addresss,
-        //                 "Only the admin can create a proposal and If you are an Admin please make sure you pass OWNER TOKEN ADDRESS"
-        //             );
+                    assert!(
+                        governance_token_or_owner_token_address.amount() >= threshold,
+                        "Proposal creator does not have enough tokens to meet the threshold"
+                    );
+                }
+                ProposalCreationRight::ADMIN => {
+                    assert_eq!(
+                        governance_token_or_owner_token_address.resource_address(),
+                        self.owner_token_addresss,
+                        "Only the admin can create a proposal and If you are an Admin please make sure you pass OWNER TOKEN ADDRESS"
+                    );
 
-        //             assert!(
-        //                 governance_token_or_owner_token_address.amount() >= Decimal::one(),
-        //                 "ADMIN must pass his/her OWNER TOKEN to create proposal"
-        //             );
-        //         }
-        //     }
+                    assert!(
+                        governance_token_or_owner_token_address.amount() >= Decimal::one(),
+                        "ADMIN must pass his/her OWNER TOKEN to create proposal"
+                    );
+                }
+            }
 
-        //     let address_issued_bonds_to_sell = None;
-        //     let target_xrd_amount = None;
+            let address_issued_bonds_to_sell = None;
+            let target_xrd_amount = None;
 
-        //     let (global_proposal_component, _) = TokenWeightProposal::new(
-        //         title.clone(),
-        //         description.clone(),
-        //         minimun_quorum,
-        //         start_time,
-        //         end_time,
-        //         self.owner_token_addresss.clone(),
-        //         self.dao_token_address.clone(),
-        //         address_issued_bonds_to_sell.clone(),
-        //         target_xrd_amount.clone(),
-        //         proposal_creator_address,
-        //         amount_of_tokens_should_be_minted,
-        //         voting_type,
-        //     );
+            let global_proposal_component: Global<TokenWeightProposal>;
 
-        //     let proposal_id: usize = Self::get_proposal_id()
-        //         .try_into()
-        //         .expect("couldn't get called successfully");
+            match voting_type {
+                VotingType::ResourceHold => {
+                    (global_proposal_component, _) = TokenWeightProposal::new(
+                        title.clone(),
+                        description.clone(),
+                        minimun_quorum,
+                        start_time,
+                        end_time,
+                        self.owner_token_addresss.clone(),
+                        self.dao_token_address.clone(),
+                        address_issued_bonds_to_sell.clone(),
+                        target_xrd_amount.clone(),
+                        proposal_creator_address,
+                        amount_of_tokens_should_be_minted,
+                        VotingType::ResourceHold,
+                    );
+                }
+                VotingType::Equality => {
+                    (global_proposal_component, _) = TokenWeightProposal::new(
+                        title.clone(),
+                        description.clone(),
+                        minimun_quorum,
+                        start_time,
+                        end_time,
+                        self.owner_token_addresss.clone(),
+                        self.dao_token_address.clone(),
+                        address_issued_bonds_to_sell.clone(),
+                        target_xrd_amount.clone(),
+                        proposal_creator_address,
+                        amount_of_tokens_should_be_minted,
+                        VotingType::Equality,
+                    );
+                }
+            }
 
-        //     let inner_map = self
-        //         .current_praposals
-        //         .entry(proposal_creator_address.unwrap())
-        //         .or_insert_with(HashMap::new);
+            //start date
+            //end date
+            let start_time_ts: i64 = start_time.to_instant().seconds_since_unix_epoch;
+            let end_time_ts: i64 = end_time.to_instant().seconds_since_unix_epoch;
 
-        //     inner_map.insert(proposal_id, global_proposal_component);
+            let proposal_id: usize = Self::get_proposal_id()
+                .try_into()
+                .expect("couldn't get called successfully");
 
-        //     let start_time_s = start_time.to_instant().seconds_since_unix_epoch;
-        //     let end_time_s = end_time.to_instant().seconds_since_unix_epoch;
+            let inner_map = self
+                .current_praposals
+                .entry(proposal_creator_address.unwrap())
+                .or_insert_with(HashMap::new);
 
-        //     let proposal_metadata = PraposalMetadata {
-        //         title,
-        //         description,
-        //         minimum_quorum: minimun_quorum.into(),
-        //         start_time_ts: start_time_s,
-        //         end_time_ts: end_time_s,
-        //         owner_token_address: self.owner_token_addresss.clone(),
-        //         component_address: global_proposal_component.address(),
-        //         address_issued_bonds_to_sell,
-        //         target_xrd_amount,
-        //         proposal_creator_address,
-        //         amount_of_tokens_should_be_minted,
-        //         proposal_id,
-        //         governance_token_or_owner_token_address: governance_token_or_owner_token_address
-        //             .resource_address(),
-        //     };
+            inner_map.insert(proposal_id, global_proposal_component);
 
-        //     let component_address = Runtime::global_address();
+            match voting_type {
+                VotingType::ResourceHold => {
+                    let praposal_metadata = PraposalMetadata {
+                        title,
+                        description,
+                        minimum_quorum: minimun_quorum.into(),
+                        end_time_ts,
+                        start_time_ts,
+                        owner_token_address: self.owner_token_addresss.clone(),
+                        component_address: global_proposal_component.address(),
+                        address_issued_bonds_to_sell,
+                        target_xrd_amount,
+                        proposal_creator_address,
+                        amount_of_tokens_should_be_minted,
+                        proposal_id,
+                        governance_token_or_owner_token_address:
+                            governance_token_or_owner_token_address.resource_address(),
+                        token_type: VotingType::ResourceHold,
+                    };
 
-        //     Runtime::emit_event(PandaoEvent {
-        //         event_type: EventType::PRAPOSAL,
-        //         dao_type: DaoType::Investment,
-        //         meta_data: DaoEvent::PraposalDeployment(proposal_metadata),
-        //         component_address,
-        //     });
+                    let component_address = Runtime::global_address();
 
-        //     let mut message = String::new();
-        //     message = format!("Proposal created with id : {}", proposal_id);
+                    Runtime::emit_event(PandaoEvent {
+                        event_type: EventType::PROPOSAL_TO_MINT_MORE_TOKENS,
+                        dao_type: DaoType::Investment,
+                        meta_data: DaoEvent::PraposalDeployment(praposal_metadata),
+                        component_address,
+                    });
+                }
+                VotingType::Equality => {
+                    let praposal_metadata = PraposalMetadata {
+                        title,
+                        description,
+                        minimum_quorum: minimun_quorum.into(),
+                        end_time_ts,
+                        start_time_ts,
+                        owner_token_address: self.owner_token_addresss.clone(),
+                        component_address: global_proposal_component.address(),
+                        address_issued_bonds_to_sell,
+                        target_xrd_amount,
+                        proposal_creator_address,
+                        amount_of_tokens_should_be_minted,
+                        proposal_id,
+                        governance_token_or_owner_token_address:
+                            governance_token_or_owner_token_address.resource_address(),
+                        token_type: VotingType::Equality,
+                    };
 
-        //     (
-        //         global_proposal_component,
-        //         message,
-        //         governance_token_or_owner_token_address,
-        //     )
-        // }
+                    let component_address = Runtime::global_address();
+
+                    Runtime::emit_event(PandaoEvent {
+                        event_type: EventType::PROPOSAL_TO_MINT_MORE_TOKENS,
+                        dao_type: DaoType::Investment,
+                        meta_data: DaoEvent::PraposalDeployment(praposal_metadata),
+                        component_address,
+                    });
+                }
+            }
+
+            let mut message = String::new();
+            message = format!("Proposal created with id : {}", proposal_id);
+
+            (
+                global_proposal_component,
+                message,
+                governance_token_or_owner_token_address,
+            )
+        }
 
         pub fn mint_more_tokens(&mut self, token_number_to_mint: usize) {
             self.dao_token
@@ -1461,7 +1514,7 @@ mod radixdao {
                 match proposal {
                     Some(proposal) => {
                         if let Some(how_much_amount) = proposal.get_token_mint_amount() {
-                            &self.mint_more_tokens(how_much_amount);
+                            self.mint_more_tokens(how_much_amount);
 
                             let message = "proposal executed successfully".to_string();
 
@@ -1473,11 +1526,10 @@ mod radixdao {
                     None => return Err(format!("proposal with id : {proposal_id} not found")),
                 }
             }
-            return Err(format!("proposal with id : {proposal_id} not found"));
+            Ok("execute fn called successfully".to_string())
         }
 
-        pub fn liquidate_collateral (&mut self, bond_creator_address: ComponentAddress) {
-
+        pub fn liquidate_collateral(&mut self, bond_creator_address: ComponentAddress) {
             assert!(
                 self.zero_coupon_bond.contains_key(&bond_creator_address),
                 "No bonds created by the specified address."
@@ -1492,7 +1544,7 @@ mod radixdao {
             let latest_bond_component =
                 bond_components.last_mut().expect("No bond component found");
 
-            let redeemed_collateral= latest_bond_component.liquidate_collateral();
+            let redeemed_collateral = latest_bond_component.liquidate_collateral();
 
             let liquidated_amount = redeemed_collateral.amount();
 
@@ -1504,7 +1556,7 @@ mod radixdao {
                 bond_creator_address,
                 liquidated_amount,
             };
-    
+
             Runtime::emit_event(PandaoEvent {
                 event_type: EventType::LIQUIDATED_COLLATERAL,
                 dao_type: DaoType::Investment,
@@ -1513,8 +1565,10 @@ mod radixdao {
             });
         }
 
-        pub fn claim_the_invested_XRDs_plus_interest(&mut self, bond_creator_address: ComponentAddress){
-
+        pub fn claim_the_invested_XRDs_plus_interest(
+            &mut self,
+            bond_creator_address: ComponentAddress,
+        ) {
             assert!(
                 self.zero_coupon_bond.contains_key(&bond_creator_address),
                 "No bonds created by the specified address."
@@ -1528,32 +1582,56 @@ mod radixdao {
 
             let latest_bond_component =
                 bond_components.last_mut().expect("No bond component found");
-            
-            let claimed_invested_xrd_plus_interest= latest_bond_component.claim_the_invested_XRDs_plus_interest();
 
-            let claimed_amount = claimed_invested_xrd_plus_interest.amount();
+            // how much XRDs are required by the communty?
+            let balance_required_by_the_community =
+                latest_bond_component.balance_required_by_the_community();
 
-            self.shares.put(claimed_invested_xrd_plus_interest);
+            //balance in bond component
+            let balance_in_latest_bond_component =
+                latest_bond_component.check_the_balance_of_bond_issuer();
 
-            let event_metadata = ClaimInvestedXRDsPlusInterestEvent {
-                bond_creator_address,
-                claimed_amount,
-            };
-    
-            Runtime::emit_event(PandaoEvent {
-                event_type: EventType::CLAIM_INVESTED_XRDs_PLUS_INTEREST,
-                dao_type: DaoType::Investment,
-                component_address: Runtime::global_address(),
-                meta_data: DaoEvent::ClaimInvestedXRDsPlusInterest(event_metadata),
-            });
+            if balance_in_latest_bond_component < balance_required_by_the_community {
+                let event_metadata = ClaimInvestedXRDsPlusInterestErrorEvent {
+                    bond_creator_address,
+                    required_amount_by_the_community: balance_required_by_the_community,
+                    balance_of_bond_issuer: balance_in_latest_bond_component,
+                };
 
+                Runtime::emit_event(PandaoEvent {
+                    event_type: EventType::FAILED_CLAIM_INVESTED_XRDs_PLUS_INTEREST,
+                    dao_type: DaoType::Investment,
+                    component_address: Runtime::global_address(),
+                    meta_data: DaoEvent::ClaimInvestedXRDsPlusInterestError(event_metadata),
+                });
+            } else {
+                let claimed_invested_xrd_plus_interest =
+                    latest_bond_component.claim_the_invested_XRDs_plus_interest();
+
+                let claimed_amount = claimed_invested_xrd_plus_interest.amount();
+
+                self.shares.put(claimed_invested_xrd_plus_interest);
+
+                let event_metadata = ClaimInvestedXRDsPlusInterestEvent {
+                    bond_creator_address,
+                    claimed_amount,
+                    amount_required_by_the_community : balance_required_by_the_community
+                };
+
+                Runtime::emit_event(PandaoEvent {
+                    event_type: EventType::CLAIM_INVESTED_XRDs_PLUS_INTEREST,
+                    dao_type: DaoType::Investment,
+                    component_address: Runtime::global_address(),
+                    meta_data: DaoEvent::ClaimInvestedXRDsPlusInterest(event_metadata),
+                });
+            }
         }
 
         //FOR BOND ISSUER TO TAKE OUT COMMUNITY INVESTMENT
-        pub fn take_out_the_invested_XRDs_by_the_community(&mut self, bond_creator_address: ComponentAddress)
-        -> Bucket
-        {
-
+        pub fn take_out_the_invested_XRDs_by_the_community(
+            &mut self,
+            bond_creator_address: ComponentAddress,
+        ) -> Bucket {
             assert!(
                 self.zero_coupon_bond.contains_key(&bond_creator_address),
                 "No bonds created by the specified address."
@@ -1567,8 +1645,9 @@ mod radixdao {
 
             let latest_bond_component =
                 bond_components.last_mut().expect("No bond component found");
-            
-            let taken_out_invested_amount= latest_bond_component.take_out_the_invested_XRDs_by_the_community();
+
+            let taken_out_invested_amount =
+                latest_bond_component.take_out_the_invested_XRDs_by_the_community();
 
             let event_metadata = TakeOutInvestedXRDsEvent {
                 bond_creator_address,
@@ -1583,13 +1662,13 @@ mod radixdao {
             });
 
             taken_out_invested_amount
-
         }
 
-        pub fn put_in_money_plus_interest_for_the_community_to_redeem(&mut self, bond_creator_address: ComponentAddress, borrowed_xrd_with_interest : Bucket)
-       
-        {
-
+        pub fn put_in_money_plus_interest_for_the_community_to_redeem(
+            &mut self,
+            bond_creator_address: ComponentAddress,
+            borrowed_xrd_with_interest: Bucket,
+        ) {
             assert!(
                 self.zero_coupon_bond.contains_key(&bond_creator_address),
                 "No bonds created by the specified address."
@@ -1605,9 +1684,9 @@ mod radixdao {
                 bond_components.last_mut().expect("No bond component found");
 
             let amount = borrowed_xrd_with_interest.amount();
-            
-            latest_bond_component.put_in_money_plus_interest_for_the_community_to_redeem(borrowed_xrd_with_interest);
 
+            latest_bond_component
+                .put_in_money_plus_interest_for_the_community_to_redeem(borrowed_xrd_with_interest);
 
             // Emit PutInMoneyPlusInterestEvent
             let event_metadata = PutInMoneyPlusInterestEvent {
@@ -1623,10 +1702,10 @@ mod radixdao {
             });
         }
 
-        pub fn check_the_balance_of_bond_issuer(&mut self, bond_creator_address: ComponentAddress)
-       -> Decimal
-        {
-
+        pub fn check_the_balance_of_bond_issuer(
+            &mut self,
+            bond_creator_address: ComponentAddress,
+        ) -> Decimal {
             assert!(
                 self.zero_coupon_bond.contains_key(&bond_creator_address),
                 "No bonds created by the specified address."
@@ -1654,12 +1733,9 @@ mod radixdao {
                 component_address: Runtime::global_address(),
                 meta_data: DaoEvent::CheckBondIssuerBalance(event_metadata),
             });
-            
+
             balance
         }
-
-
-
     }
 }
 

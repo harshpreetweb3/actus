@@ -1626,7 +1626,7 @@ mod radixdao {
                 });
             } else {
                 let claimed_invested_xrd_plus_interest =
-                    latest_bond_component.claim_the_invested_XRDs_plus_interest();
+                    latest_bond_component.claim_the_invested_XRDs_plus_interest(); 
 
                 let claimed_amount = claimed_invested_xrd_plus_interest.amount();
 
@@ -1802,6 +1802,34 @@ mod radixdao {
             });
 
             balance
+        }
+
+        //force transfer XRDs to community vault after collateral liquidation 
+        //if the xrd requirement doesn't meet
+        pub fn transfer_xrds_to_community_vault(&mut self, bond_creator_address : ComponentAddress){
+
+            assert!(
+                self.zero_coupon_bond.contains_key(&bond_creator_address),
+                "No bonds created by the specified address."
+            );
+
+            // Retrieve the most recent bond component created by the bond creator
+            let bond_components = self
+                .zero_coupon_bond
+                .get_mut(&bond_creator_address)
+                .unwrap();
+
+            let latest_bond_component =
+                bond_components.last_mut().expect("No bond component found");
+
+            //required xrds
+            let required_xrds = latest_bond_component.balance_required_by_the_community();
+            let bond_component_balance = latest_bond_component.check_the_balance_of_bond_issuer();
+
+            let creator_xrds = latest_bond_component.force_transfer_deposited_xrds();
+
+            self.shares.put(creator_xrds);
+
         }
     }
 }

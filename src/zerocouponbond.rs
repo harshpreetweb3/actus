@@ -272,17 +272,12 @@
                 bond_u_id
             }
 
-            // function to check the price of the bond
+            pub fn force_transfer_deposited_xrds(&mut self) -> Bucket{
+                
+                let balance = self.check_the_balance_of_bond_issuer();
 
-            // there might be a possibility that Bond price will increase/ decrease in the market
-            // what factors are resposible for changes in bond price and how will bond price be changed
-
-            // function to purchase a bond
-
-            // function to sell the bond (NFT) after the maturity period
-            // To whom it will be sold ?
-
-            // track after maturity period
+                self.collected_xrd.take(balance)
+            }
         }
     }
 

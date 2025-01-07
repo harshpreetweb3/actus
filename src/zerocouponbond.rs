@@ -37,6 +37,8 @@
             price: u64,
             pub bond_resourse_address : ResourceAddress,
             pub collateral : Vault,
+            pub money_taken_by_creator : bool,
+            pub successful_claim_by_community : bool
         }
 
         impl ZeroCouponBond {
@@ -95,11 +97,14 @@
                     collected_xrd: Vault::new(XRD),
                     price,
                     bond_resourse_address,
-                    collateral: Vault::with_bucket(nft_as_collateral)
+                    collateral: Vault::with_bucket(nft_as_collateral),
+                    money_taken_by_creator : false,
+                    successful_claim_by_community : false
                 }
                 .instantiate()
                 .prepare_to_globalize(OwnerRole::None)
                 .globalize()
+
             }
 
             pub fn get_resource_address(&self) -> ResourceAddress{
@@ -173,6 +178,21 @@
                 self.collateral.take(1)
             }
 
+            pub fn get_back_the_collateral(&mut self) -> Bucket {
+                
+                if self.successful_claim_by_community == true{
+                    //now that community claimed their interest plus principal amount
+                    //now we can let the creator take back his collateral
+                    self.collateral.take(1)
+                }else{
+                    Bucket::new(self.collateral.resource_address())
+                }
+            }
+
+            pub fn get_money_claim_status(&self) -> bool{
+                self.successful_claim_by_community
+            }
+
             //GET BACK THE INVESTED XRD + INTEREST RATE
             //FOR A COMMUNITY
             pub fn claim_the_invested_XRDs_plus_interest(&mut self) -> Bucket{
@@ -199,19 +219,45 @@
                 total_amount
             }
 
-            pub fn take_out_the_invested_XRDs_by_the_community(&mut self)
-
-            -> Bucket
-
-            {
-                let bond_price = self.price;
-
-                self.collected_xrd.take(bond_price)
-
+            pub fn change_community_claim_status(&mut self, value : bool){
+                self.successful_claim_by_community = value;
             }
 
-            pub fn put_in_money_plus_interest_for_the_community_to_redeem(&mut self, borrowed_xrd_with_interest : Bucket){
-                self.collected_xrd.put(borrowed_xrd_with_interest)
+            pub fn take_out_the_invested_XRDs_by_the_community(&mut self)
+            -> Bucket
+            {
+                let bond_price = self.price;
+                self.collected_xrd.take(bond_price)
+            }
+
+            pub fn bond_creator_money_status(&self) -> bool{
+                self.money_taken_by_creator
+            }
+
+            pub fn put_in_money_plus_interest_for_the_community_to_redeem(&mut self, mut borrowed_xrd_with_interest : Bucket) -> Bucket {
+
+                let required_amount_by_the_community = self.balance_required_by_the_community();
+
+                let resource_address_of_xrds = borrowed_xrd_with_interest.resource_address();
+
+                let amount_getting_deposited = borrowed_xrd_with_interest.amount();
+
+                if amount_getting_deposited >= required_amount_by_the_community{
+
+                    let taken_out_required_amount = borrowed_xrd_with_interest.take(required_amount_by_the_community);
+
+                    self.collected_xrd.put(taken_out_required_amount);
+    
+                    borrowed_xrd_with_interest
+
+                }else{
+
+                    self.collected_xrd.put(borrowed_xrd_with_interest);
+
+                    // this is an emtpy bucket 
+                    Bucket::new(resource_address_of_xrds)
+                }
+
             }
 
             pub fn check_the_balance_of_bond_issuer(&self) 

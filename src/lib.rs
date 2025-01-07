@@ -1529,6 +1529,26 @@ mod radixdao {
             Ok("execute fn called successfully".to_string())
         }
 
+        pub fn get_back_the_collateral(&mut self, bond_creator_address : ComponentAddress) -> Bucket {
+            assert!(
+                self.zero_coupon_bond.contains_key(&bond_creator_address),
+                "No bonds created by the specified address."
+            );
+
+            // Retrieve the most recent bond component created by the bond creator
+            let bond_components = self
+                .zero_coupon_bond
+                .get_mut(&bond_creator_address)
+                .unwrap();
+
+            let latest_bond_component =
+                bond_components.last_mut().expect("No bond component found");
+
+            let money_claim_status_by_community = latest_bond_component.get_money_claim_status();
+            
+            latest_bond_component.get_back_the_collateral()
+        }
+
         pub fn liquidate_collateral(&mut self, bond_creator_address: ComponentAddress) {
             assert!(
                 self.zero_coupon_bond.contains_key(&bond_creator_address),
@@ -1612,10 +1632,13 @@ mod radixdao {
 
                 self.shares.put(claimed_invested_xrd_plus_interest);
 
+                //claimed successful
+                latest_bond_component.change_community_claim_status(true);
+
                 let event_metadata = ClaimInvestedXRDsPlusInterestEvent {
                     bond_creator_address,
                     claimed_amount,
-                    amount_required_by_the_community : balance_required_by_the_community
+                    amount_required_by_the_community: balance_required_by_the_community,
                 };
 
                 Runtime::emit_event(PandaoEvent {
@@ -1626,6 +1649,8 @@ mod radixdao {
                 });
             }
         }
+
+        
 
         //FOR BOND ISSUER TO TAKE OUT COMMUNITY INVESTMENT
         pub fn take_out_the_invested_XRDs_by_the_community(
@@ -1645,6 +1670,8 @@ mod radixdao {
 
             let latest_bond_component =
                 bond_components.last_mut().expect("No bond component found");
+
+            // let bond_creator_money_taken_status = latest_bond_component.bond_creator_money_status();
 
             let taken_out_invested_amount =
                 latest_bond_component.take_out_the_invested_XRDs_by_the_community();
@@ -1668,7 +1695,8 @@ mod radixdao {
             &mut self,
             bond_creator_address: ComponentAddress,
             borrowed_xrd_with_interest: Bucket,
-        ) {
+        ) -> Bucket {
+
             assert!(
                 self.zero_coupon_bond.contains_key(&bond_creator_address),
                 "No bonds created by the specified address."
@@ -1682,24 +1710,63 @@ mod radixdao {
 
             let latest_bond_component =
                 bond_components.last_mut().expect("No bond component found");
+            
 
-            let amount = borrowed_xrd_with_interest.amount();
+            
+            let amount_getting_deposited = borrowed_xrd_with_interest.amount();
 
-            latest_bond_component
+            // Get Required Amount
+            let required_amount = latest_bond_component.balance_required_by_the_community();
+
+            let extra_money = latest_bond_component
                 .put_in_money_plus_interest_for_the_community_to_redeem(borrowed_xrd_with_interest);
 
-            // Emit PutInMoneyPlusInterestEvent
-            let event_metadata = PutInMoneyPlusInterestEvent {
-                bond_creator_address,
-                amount,
-            };
+            let extra_money_amount = extra_money.amount();
 
-            Runtime::emit_event(PandaoEvent {
-                event_type: EventType::PUT_IN_MONEY_PLUS_INTEREST,
-                dao_type: DaoType::Investment,
-                component_address: Runtime::global_address(),
-                meta_data: DaoEvent::PutInMoneyPlusInterest(event_metadata),
-            });
+            //event emission
+
+            if amount_getting_deposited >= required_amount{
+
+                let event_metadata_if = PutInMoneyPlusInterestEvent {
+                    bond_creator_address,
+                    amount_getting_deposited,
+                    amount_required_by_the_community : required_amount,
+                    amount_taken_by_the_community    : required_amount,
+                    extra_amount_given_back_to_the_sender : extra_money_amount,
+                    more_xrd_amount_required_by_the_community : Decimal::zero()
+                };
+
+                Runtime::emit_event(PandaoEvent {
+                    event_type: EventType::PUT_IN_MONEY_PLUS_INTEREST,
+                    dao_type: DaoType::Investment,
+                    component_address: Runtime::global_address(),
+                    meta_data: DaoEvent::PutInMoneyPlusInterest(event_metadata_if)
+                });
+
+            }else{
+
+                let more_xrd_amount_required_by_the_community  = required_amount - amount_getting_deposited;
+
+                let event_metadata_else = PutInMoneyPlusInterestEvent {
+                    bond_creator_address,
+                    amount_getting_deposited,
+                    amount_required_by_the_community : required_amount,
+                    amount_taken_by_the_community    : amount_getting_deposited,
+                    extra_amount_given_back_to_the_sender : extra_money_amount,
+                    more_xrd_amount_required_by_the_community
+                };
+
+                Runtime::emit_event(PandaoEvent {
+                    event_type: EventType::PUT_IN_LESS_MONEY_PLUS_INTEREST,
+                    dao_type: DaoType::Investment,
+                    component_address: Runtime::global_address(),
+                    meta_data: DaoEvent::PutInMoneyPlusInterest(event_metadata_else)
+                });
+
+
+            }
+
+            extra_money
         }
 
         pub fn check_the_balance_of_bond_issuer(

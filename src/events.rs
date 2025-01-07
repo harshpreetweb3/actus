@@ -34,6 +34,9 @@ pub enum EventType {
 
     PUT_IN_MONEY_PLUS_INTEREST,
 
+
+    PUT_IN_LESS_MONEY_PLUS_INTEREST,
+
     CLAIM_INVESTED_XRDs_PLUS_INTEREST,
 
     FAILED_CLAIM_INVESTED_XRDs_PLUS_INTEREST,
@@ -270,6 +273,13 @@ pub struct LiquidatedCollateralEvent {
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
+pub struct GettingCollateralBackEvent {
+    pub bond_creator_address: ComponentAddress,
+    pub message: String,
+    pub resource_address_of_collateral : ResourceAddress
+}
+
+#[derive(ScryptoSbor, ScryptoEvent)]
 pub struct TakeOutInvestedXRDsEvent {
     pub bond_creator_address: ComponentAddress,
     pub taken_out_amount: Decimal,
@@ -278,8 +288,13 @@ pub struct TakeOutInvestedXRDsEvent {
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub struct PutInMoneyPlusInterestEvent {
     pub bond_creator_address: ComponentAddress,
-    pub amount: Decimal,
+    pub amount_getting_deposited : Decimal,
+    pub amount_required_by_the_community : Decimal,
+    pub amount_taken_by_the_community : Decimal,
+    pub extra_amount_given_back_to_the_sender : Decimal,
+    pub more_xrd_amount_required_by_the_community : Decimal
 }
+
 
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub struct ClaimInvestedXRDsPlusInterestEvent {

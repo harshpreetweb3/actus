@@ -85,26 +85,14 @@ mod radixdao {
             purpose: String,
 
             proposal_creation_right: ProposalCreationRight,
+
+            token_name : String
         ) -> (Global<TokenWeigtedDao>, Bucket) {
             // reserve an address for the DAO component
             let (address_reservation, _) =
                 Runtime::allocate_component_address(TokenWeigtedDao::blueprint_id());
 
             let owner_badge_description = format!("{}'s owner badge", &organization_name);
-
-            // ! create a owner role, this role is only for changing the praposal and inserting a new praposal
-
-            // this is not seen by me as of yet
-            // ! Being a DAO, proposal can be created by any person
-
-            // * owner badge creation
-            // * Moreover this is fungible token (IT MUST BE NON_FUNGIBLE)
-
-            // Owner Badge Creation: Creates a non-divisible owner badge with metadata containing
-            // the organization's name and icon URL.
-            // ! This badge likely represents administrative control over the DAO.
-
-            // * THERE CANNOT BE ADMINISTRATIVE CONTROL
 
             let owner_badge: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
                 .divisibility(0)
@@ -123,7 +111,7 @@ mod radixdao {
                 .into();
 
             // create nft to be sold for voting purpose
-            let dao_token_description = format!("{} voting share", &organization_name);
+            let dao_token_description = format!("{} voting share", token_name);
 
             let voting_power_tokens: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
                 .divisibility(divisibility)
@@ -364,6 +352,8 @@ mod radixdao {
                         purpose: purpose.clone(),
 
                         proposal_creation_right: ProposalCreationRight::EVERYONE,
+
+                        token_name
                     };
 
                     Runtime::emit_event(PandaoEvent {
@@ -403,6 +393,8 @@ mod radixdao {
                         proposal_creation_right: ProposalCreationRight::TOKEN_HOLDER_THRESHOLD(
                             threshold,
                         ),
+
+                        token_name
                     };
 
                     Runtime::emit_event(PandaoEvent {
@@ -440,6 +432,8 @@ mod radixdao {
                         purpose: purpose.clone(),
 
                         proposal_creation_right: ProposalCreationRight::ADMIN,
+
+                        token_name
                     };
 
                     Runtime::emit_event(PandaoEvent {
@@ -452,16 +446,8 @@ mod radixdao {
                 }
             }
 
-            //Event emission in blockchain systems is primarily used for transparency,
-            //enabling tracking of significant actions and changes in state,
-            //and facilitating communication between smart contracts and external applications.
-
-            // TODO: THERE WOULD BE INTRIGUING TO SEE WHERE THIS EMISSION IS BEING USED?
-
             (component, owner_badge)
         }
-
-        // TODO: OBTAIN A COMMUNITY TOKEN
 
         pub fn obtain_community_token(
             &mut self,

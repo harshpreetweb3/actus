@@ -110,7 +110,8 @@ pub struct PraposalMetadata {
     pub amount_of_tokens_should_be_minted : Option<usize>,
     pub proposal_id : usize,
     pub governance_token_or_owner_token_address : ResourceAddress,
-    pub token_type : VotingType
+    pub token_type : VotingType,
+    pub desired_token_price : Option<Decimal>
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]

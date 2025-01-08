@@ -44,7 +44,8 @@ mod pandao_praposal {
         pub voting_type: VotingType,
         pub proposal_creation_status : bool,
         pub proposal_execution_status : bool,
-        pub proposal_denied_status : bool
+        pub proposal_denied_status : bool,
+        pub desired_token_price : Option<Decimal>
         // pub number_of_people_voted: i32
     }
 
@@ -62,8 +63,8 @@ mod pandao_praposal {
             target_xrd_amount : Option<Decimal>,
             proposal_creator_address : Option<ComponentAddress>,
             amount_of_tokens_should_be_minted : Option<usize>,
-            voting_type: VotingType, // New parameter
-
+            voting_type: VotingType,
+            desired_token_price : Option<Decimal>
         ) -> (Global<TokenWeightProposal >, GlobalAddressReservation) {
             
             let (address_reservation, _) =
@@ -91,7 +92,8 @@ mod pandao_praposal {
                 voting_type,
                 proposal_creation_status,
                 proposal_execution_status,
-                proposal_denied_status
+                proposal_denied_status,
+                desired_token_price
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::None)
@@ -99,6 +101,10 @@ mod pandao_praposal {
             .globalize();
 
             (proposal, address_reservation)
+        }
+
+        pub fn set_price(&mut self, desired_price : Option<Decimal>){
+            self.desired_token_price = desired_price;
         }
 
         pub fn vote(&mut self, token: Bucket, against: bool) -> Bucket {

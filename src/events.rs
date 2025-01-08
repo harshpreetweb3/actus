@@ -24,7 +24,11 @@ pub enum EventType {
 
     QUORUM_NOT_MET_AND_FAILED,
 
+    PRICE_CHANGE_QUORUM_NOT_MET_AND_FAILED,
+
     QUORUM_MET_AND_SUCCESS,
+
+    PRICE_CHANGE_QUORUM_MET_AND_SUCCESS,
 
     CHECK_BOND_ISSUER_BALANCE,
 
@@ -93,6 +97,19 @@ pub struct TokenWeightBuyToken {
 
 }
 
+// #[derive(ScryptoSbor, ScryptoEvent)]
+// pub struct TokenWeightBuyToken {
+
+//     pub amount: Decimal,
+
+//     pub resource_address: ResourceAddress,
+
+//     pub amount_paid: Decimal,
+
+//     pub current_component_share: Decimal,
+
+// }
+
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub struct PraposalMetadata {
     // a simple string representing current praposal
@@ -132,6 +149,10 @@ pub enum DaoEvent {
     ZeroCouponBondCreation(ZeroCouponBondCreation),
 
     ProposalQuorumNotMet(ProposalQuorumNotMet), // New event type
+
+    PriceChangeProposalQuorumNotMet(PriceChangeProposalQuorumNotMet),
+
+    PriceChangeProposalQuorumMet(PriceChangeProposalQuorumMet),
 
     ProposalQuorumMet(ProposalQuorumMet),
 
@@ -257,12 +278,28 @@ pub struct ProposalQuorumNotMet {
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
+pub struct PriceChangeProposalQuorumNotMet {
+    pub proposal_id: usize,
+    pub minimum_quorum: usize,
+    pub number_of_voters: usize,
+    pub desired_price : Decimal
+}
+
+#[derive(ScryptoSbor, ScryptoEvent)]
 pub struct ProposalQuorumMet {
     pub proposal_id: usize,
     pub minimum_quorum: usize,
     pub number_of_voters: usize,
     pub bond_creator_address : ComponentAddress,
     pub contract_identity : String
+}
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct PriceChangeProposalQuorumMet {
+    pub proposal_id: usize,
+    pub minimum_quorum: usize,
+    pub number_of_voters: usize,
+    pub desired_token_price : Decimal
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]

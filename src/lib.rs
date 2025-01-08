@@ -698,7 +698,7 @@ mod radixdao {
                         governance_token_or_owner_token_address:
                             governance_token_or_owner_token_address.resource_address(),
                         token_type: VotingType::ResourceHold,
-                        desired_token_price
+                        desired_token_price,
                     };
 
                     let component_address = Runtime::global_address();
@@ -727,7 +727,7 @@ mod radixdao {
                         governance_token_or_owner_token_address:
                             governance_token_or_owner_token_address.resource_address(),
                         token_type: VotingType::Equality,
-                        desired_token_price
+                        desired_token_price,
                     };
 
                     let component_address = Runtime::global_address();
@@ -1399,7 +1399,7 @@ mod radixdao {
                         governance_token_or_owner_token_address:
                             governance_token_or_owner_token_address.resource_address(),
                         token_type: VotingType::ResourceHold,
-                        desired_token_price
+                        desired_token_price,
                     };
 
                     let component_address = Runtime::global_address();
@@ -1428,7 +1428,7 @@ mod radixdao {
                         governance_token_or_owner_token_address:
                             governance_token_or_owner_token_address.resource_address(),
                         token_type: VotingType::Equality,
-                        desired_token_price
+                        desired_token_price,
                     };
 
                     let component_address = Runtime::global_address();
@@ -1455,6 +1455,10 @@ mod radixdao {
         pub fn mint_more_tokens(&mut self, token_number_to_mint: usize) {
             self.dao_token
                 .put(self.dao_token_resource_manager.mint(token_number_to_mint));
+        }
+
+        pub fn set_price(&mut self, desired_token_price: Decimal) {
+            self.token_price = desired_token_price
         }
 
         pub fn execute_proposal_to_mint_more_tokens(
@@ -1805,67 +1809,6 @@ mod radixdao {
             self.shares.put(creator_xrds);
         }
 
-        //proposal to change community token price
-        // pub fn create_proposal_to_change_token_price(
-        //     &mut self,
-        //     title: String,
-        //     description: String,
-        //     minimun_quorum: u8,
-        //     start_time: scrypto::time::UtcDateTime,
-        //     end_time: scrypto::time::UtcDateTime,
-        //     proposal_creator_address: Option<ComponentAddress>,
-        //     governance_token_or_owner_token_address: Bucket,
-        //     voting_type: VotingType,
-        // ) {
-        //     //implement proposal creation rights
-        //     match self.proposal_creation_right {
-
-        //         ProposalCreationRight::EVERYONE => {
-        //             assert_eq!(
-        //                             governance_token_or_owner_token_address.resource_address(),
-        //                             self.dao_token_address,
-        //                             "wrong voting token supplied! please make sure that you supply DAO Governance Token"
-        //                         );
-
-        //             assert!(
-        //                             governance_token_or_owner_token_address.amount() >= Decimal::one(),
-        //                             "Proposal creator must have at least one governance token to create a proposal"
-        //                         );
-
-        //             //allow proposal creation
-        //         }
-        //         ProposalCreationRight::TOKEN_HOLDER_THRESHOLD(threshold) => {
-        //             assert_eq!(
-        //                             governance_token_or_owner_token_address.resource_address(),
-        //                             self.dao_token_address,
-        //                             "wrong voting token supplied! please make sure that you supply DAO Governance Token"
-        //                         );
-
-        //             assert!(
-        //                 governance_token_or_owner_token_address.amount() >= threshold,
-        //                 "Proposal creator does not have enough tokens to meet the threshold"
-        //             );
-        //         }
-        //         ProposalCreationRight::ADMIN => {
-        //             assert_eq!(
-        //                             governance_token_or_owner_token_address.resource_address(),
-        //                             self.owner_token_addresss,
-        //                             "Only the admin can create a proposal and If you are an Admin please make sure you pass OWNER TOKEN ADDRESS"
-        //                         );
-
-        //             assert!(
-        //                 governance_token_or_owner_token_address.amount() >= Decimal::one(),
-        //                 "ADMIN must pass his/her OWNER TOKEN to create proposal"
-        //             );
-        //         }
-        //     }
-
-        //     //address issued bond to sell
-        //     // let address_issued_bond_to_sell = None;
-        //     // let target_xrd_amount = None;
-        //     // let amount_of_tokens_should_be_minted: Option<usize> = None;
-        // }
-
         pub fn create_proposal_to_change_token_price(
             &mut self,
             title: String,
@@ -1877,16 +1820,11 @@ mod radixdao {
             governance_token_or_owner_token_address: Bucket,
             voting_type: VotingType,
             desired_token_price: Option<Decimal>,
-        ) 
-        ->
-        (
+        ) -> (
             Global<crate::proposal::pandao_praposal::TokenWeightProposal>,
             String,
             Bucket,
-        )
-
-        {
-            
+        ) {
             match self.proposal_creation_right {
                 ProposalCreationRight::EVERYONE => {
                     assert_eq!(
@@ -2005,7 +1943,7 @@ mod radixdao {
                         governance_token_or_owner_token_address:
                             governance_token_or_owner_token_address.resource_address(),
                         token_type: VotingType::ResourceHold,
-                        desired_token_price
+                        desired_token_price,
                     };
 
                     let component_address = Runtime::global_address();
@@ -2034,7 +1972,7 @@ mod radixdao {
                         governance_token_or_owner_token_address:
                             governance_token_or_owner_token_address.resource_address(),
                         token_type: VotingType::Equality,
-                        desired_token_price
+                        desired_token_price,
                     };
 
                     let component_address = Runtime::global_address();
@@ -2056,7 +1994,90 @@ mod radixdao {
                 message,
                 governance_token_or_owner_token_address,
             )
+        }
 
+        pub fn execute_proposal_to_change_token_price(
+            &mut self,
+            proposal_id: usize,
+        ) -> Result<String, String> {
+            for (_, inner_map) in self.current_praposals.clone() {
+                let proposal = inner_map.get(&proposal_id);
+
+                let now: Instant = Clock::current_time_rounded_to_seconds();
+                let current_time_seconds: i64 = now.seconds_since_unix_epoch;
+
+                let last_time = proposal.unwrap().get_last_time();
+                let end_time_seconds = last_time.to_instant().seconds_since_unix_epoch;
+
+                // Debug statements to verify the times
+                println!("Current time (epoch seconds): {}", current_time_seconds);
+                println!("Proposal end time (epoch seconds): {}", end_time_seconds);
+
+                assert!(
+                    current_time_seconds > end_time_seconds,
+                    "Proposal can only be executed after the specified end time"
+                );
+
+                match proposal {
+                    Some(proposal) => {
+
+
+                        let number_of_voters = proposal.get_number_of_voters(); //inline attribute on fn definition
+                        let minimum_quorum = proposal.get_minimum_quorum();
+
+                        
+
+                        if let Some(desired_price) = proposal.get_desired_token_price() {
+
+                            if number_of_voters < minimum_quorum {
+
+                                // Emit an event indicating that the proposal cannot be executed due to insufficient participation
+                                let event_metadata = PriceChangeProposalQuorumNotMet {
+                                    proposal_id,
+                                    minimum_quorum: proposal.get_minimum_quorum(),
+                                    number_of_voters,
+                                    desired_price
+                                };
+            
+                                let component_address = Runtime::global_address();
+            
+                                Runtime::emit_event(PandaoEvent {
+                                    event_type: EventType::PRICE_CHANGE_QUORUM_NOT_MET_AND_FAILED,
+                                    dao_type: DaoType::Investment,
+                                    component_address,
+                                    meta_data: DaoEvent::PriceChangeProposalQuorumNotMet(event_metadata),
+                                });
+                            }
+                            
+                            self.set_price(desired_price);
+
+                            let event_metadata = PriceChangeProposalQuorumMet {
+                                proposal_id,
+                                minimum_quorum: proposal.get_minimum_quorum(),
+                                number_of_voters,
+                                desired_token_price : desired_price
+                            };
+        
+                            let component_address = Runtime::global_address();
+        
+                            Runtime::emit_event(PandaoEvent {
+                                event_type: EventType::PRICE_CHANGE_QUORUM_MET_AND_SUCCESS,
+                                dao_type: DaoType::Investment,
+                                component_address,
+                                meta_data: DaoEvent::PriceChangeProposalQuorumMet(event_metadata)
+                            });
+
+                            let message = "proposal executed successfully".to_string();
+
+                            return Ok(message);
+                        } else {
+                            return Err(format!("desired token price is not present in a proposal with id : {proposal_id}"));
+                        }
+                    }
+                    None => return Err(format!("proposal with id : {proposal_id} not found")),
+                }
+            }
+            Ok("execute fn called successfully".to_string())
         }
     }
 }

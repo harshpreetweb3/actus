@@ -103,9 +103,9 @@ mod pandao_praposal {
             (proposal, address_reservation)
         }
 
-        pub fn set_price(&mut self, desired_price : Option<Decimal>){
-            self.desired_token_price = desired_price;
-        }
+        // pub fn set_price(&mut self, desired_price : Option<Decimal>){
+        //     self.desired_token_price = desired_price;
+        // }
 
         pub fn vote(&mut self, token: Bucket, against: bool) -> Bucket {
 
@@ -212,6 +212,10 @@ mod pandao_praposal {
 
         pub fn get_minimum_quorum(&self) -> usize {
             self.minimum_quorum
+        }
+
+        pub fn get_desired_token_price(&self) -> Option<Decimal>{
+            self.desired_token_price
         }
 
     }

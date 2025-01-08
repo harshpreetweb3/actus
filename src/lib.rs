@@ -1359,8 +1359,8 @@ mod radixdao {
                 }
             }
 
-            let address_issued_bonds_to_sell = None;
-            let target_xrd_amount = None;
+            let address_issued_bonds_to_sell: Option<ComponentAddress> = None;
+            let target_xrd_amount: Option<Decimal> = None;
 
             let global_proposal_component: Global<TokenWeightProposal>;
 
@@ -1529,7 +1529,10 @@ mod radixdao {
             Ok("execute fn called successfully".to_string())
         }
 
-        pub fn get_back_the_collateral(&mut self, bond_creator_address : ComponentAddress) -> Bucket {
+        pub fn get_back_the_collateral(
+            &mut self,
+            bond_creator_address: ComponentAddress,
+        ) -> Bucket {
             assert!(
                 self.zero_coupon_bond.contains_key(&bond_creator_address),
                 "No bonds created by the specified address."
@@ -1545,7 +1548,7 @@ mod radixdao {
                 bond_components.last_mut().expect("No bond component found");
 
             let money_claim_status_by_community = latest_bond_component.get_money_claim_status();
-            
+
             latest_bond_component.get_back_the_collateral()
         }
 
@@ -1626,7 +1629,7 @@ mod radixdao {
                 });
             } else {
                 let claimed_invested_xrd_plus_interest =
-                    latest_bond_component.claim_the_invested_XRDs_plus_interest(); 
+                    latest_bond_component.claim_the_invested_XRDs_plus_interest();
 
                 let claimed_amount = claimed_invested_xrd_plus_interest.amount();
 
@@ -1649,8 +1652,6 @@ mod radixdao {
                 });
             }
         }
-
-        
 
         //FOR BOND ISSUER TO TAKE OUT COMMUNITY INVESTMENT
         pub fn take_out_the_invested_XRDs_by_the_community(
@@ -1696,7 +1697,6 @@ mod radixdao {
             bond_creator_address: ComponentAddress,
             borrowed_xrd_with_interest: Bucket,
         ) -> Bucket {
-
             assert!(
                 self.zero_coupon_bond.contains_key(&bond_creator_address),
                 "No bonds created by the specified address."
@@ -1710,9 +1710,7 @@ mod radixdao {
 
             let latest_bond_component =
                 bond_components.last_mut().expect("No bond component found");
-            
 
-            
             let amount_getting_deposited = borrowed_xrd_with_interest.amount();
 
             // Get Required Amount
@@ -1725,45 +1723,41 @@ mod radixdao {
 
             //event emission
 
-            if amount_getting_deposited >= required_amount{
-
+            if amount_getting_deposited >= required_amount {
                 let event_metadata_if = PutInMoneyPlusInterestEvent {
                     bond_creator_address,
                     amount_getting_deposited,
-                    amount_required_by_the_community : required_amount,
-                    amount_taken_by_the_community    : required_amount,
-                    extra_amount_given_back_to_the_sender : extra_money_amount,
-                    more_xrd_amount_required_by_the_community : Decimal::zero()
+                    amount_required_by_the_community: required_amount,
+                    amount_taken_by_the_community: required_amount,
+                    extra_amount_given_back_to_the_sender: extra_money_amount,
+                    more_xrd_amount_required_by_the_community: Decimal::zero(),
                 };
 
                 Runtime::emit_event(PandaoEvent {
                     event_type: EventType::PUT_IN_MONEY_PLUS_INTEREST,
                     dao_type: DaoType::Investment,
                     component_address: Runtime::global_address(),
-                    meta_data: DaoEvent::PutInMoneyPlusInterest(event_metadata_if)
+                    meta_data: DaoEvent::PutInMoneyPlusInterest(event_metadata_if),
                 });
-
-            }else{
-
-                let more_xrd_amount_required_by_the_community  = required_amount - amount_getting_deposited;
+            } else {
+                let more_xrd_amount_required_by_the_community =
+                    required_amount - amount_getting_deposited;
 
                 let event_metadata_else = PutInMoneyPlusInterestEvent {
                     bond_creator_address,
                     amount_getting_deposited,
-                    amount_required_by_the_community : required_amount,
-                    amount_taken_by_the_community    : amount_getting_deposited,
-                    extra_amount_given_back_to_the_sender : extra_money_amount,
-                    more_xrd_amount_required_by_the_community
+                    amount_required_by_the_community: required_amount,
+                    amount_taken_by_the_community: amount_getting_deposited,
+                    extra_amount_given_back_to_the_sender: extra_money_amount,
+                    more_xrd_amount_required_by_the_community,
                 };
 
                 Runtime::emit_event(PandaoEvent {
                     event_type: EventType::PUT_IN_LESS_MONEY_PLUS_INTEREST,
                     dao_type: DaoType::Investment,
                     component_address: Runtime::global_address(),
-                    meta_data: DaoEvent::PutInMoneyPlusInterest(event_metadata_else)
+                    meta_data: DaoEvent::PutInMoneyPlusInterest(event_metadata_else),
                 });
-
-
             }
 
             extra_money
@@ -1804,10 +1798,9 @@ mod radixdao {
             balance
         }
 
-        //force transfer XRDs to community vault after collateral liquidation 
+        //force transfer XRDs to community vault after collateral liquidation
         //if the xrd requirement doesn't meet
-        pub fn transfer_xrds_to_community_vault(&mut self, bond_creator_address : ComponentAddress){
-
+        pub fn transfer_xrds_to_community_vault(&mut self, bond_creator_address: ComponentAddress) {
             assert!(
                 self.zero_coupon_bond.contains_key(&bond_creator_address),
                 "No bonds created by the specified address."
@@ -1828,9 +1821,105 @@ mod radixdao {
 
             let creator_xrds = latest_bond_component.force_transfer_deposited_xrds();
 
-            self.shares.put(creator_xrds);
+            let event = ForceTransferFunds {
+                bond_creator_address,
+                required_amount: required_xrds,
+                bond_component_balance,
+            };
 
+            Runtime::emit_event(PandaoEvent {
+                event_type: EventType::FORCE_TRANSFER_OF_FUNDS,
+                dao_type: DaoType::Investment,
+                component_address: Runtime::global_address(),
+                meta_data: DaoEvent::ForceTransferFunds(event),
+            });
+
+            self.shares.put(creator_xrds);
         }
+
+        //proposal to change community token price
+        // pub fn create_proposal_to_change_token_price(
+        //     &mut self,
+        //     title: String,
+        //     description: String,
+        //     minimun_quorum: u8,
+        //     start_time: scrypto::time::UtcDateTime,
+        //     end_time: scrypto::time::UtcDateTime,
+        //     proposal_creator_address: Option<ComponentAddress>,
+        //     governance_token_or_owner_token_address: Bucket,
+        //     voting_type: VotingType,
+        // ) {
+        //     //implement proposal creation rights
+        //     match self.proposal_creation_right {
+                
+        //         ProposalCreationRight::EVERYONE => {
+        //             assert_eq!(
+        //                             governance_token_or_owner_token_address.resource_address(),
+        //                             self.dao_token_address,
+        //                             "wrong voting token supplied! please make sure that you supply DAO Governance Token"
+        //                         );
+
+        //             assert!(
+        //                             governance_token_or_owner_token_address.amount() >= Decimal::one(),
+        //                             "Proposal creator must have at least one governance token to create a proposal"
+        //                         );
+
+        //             //allow proposal creation
+        //         }
+        //         ProposalCreationRight::TOKEN_HOLDER_THRESHOLD(threshold) => {
+        //             assert_eq!(
+        //                             governance_token_or_owner_token_address.resource_address(),
+        //                             self.dao_token_address,
+        //                             "wrong voting token supplied! please make sure that you supply DAO Governance Token"
+        //                         );
+
+        //             assert!(
+        //                 governance_token_or_owner_token_address.amount() >= threshold,
+        //                 "Proposal creator does not have enough tokens to meet the threshold"
+        //             );
+        //         }
+        //         ProposalCreationRight::ADMIN => {
+        //             assert_eq!(
+        //                             governance_token_or_owner_token_address.resource_address(),
+        //                             self.owner_token_addresss,
+        //                             "Only the admin can create a proposal and If you are an Admin please make sure you pass OWNER TOKEN ADDRESS"
+        //                         );
+
+        //             assert!(
+        //                 governance_token_or_owner_token_address.amount() >= Decimal::one(),
+        //                 "ADMIN must pass his/her OWNER TOKEN to create proposal"
+        //             );
+        //         }
+        //     }
+
+        //     //address issued bond to sell
+        //     // let address_issued_bond_to_sell = None;
+        //     // let target_xrd_amount = None;
+        //     // let amount_of_tokens_should_be_minted: Option<usize> = None;
+        // }
+
+        // pub fn create_proposal_to_change_token_price(
+        //     &mut self,
+        //     title: String,
+        //     description: String,
+        //     minimun_quorum: u8,
+        //     start_time: scrypto::time::UtcDateTime,
+        //     end_time: scrypto::time::UtcDateTime,
+        //     proposal_creator_address: Option<ComponentAddress>,
+        //     governance_token_or_owner_token_address: Bucket,
+        //     voting_type: VotingType,
+        // ) {
+
+        //     //condition
+
+        //     let address_issued_bonds_to_sell: Option<ComponentAddress> = None;
+        //     let target_xrd_amount: Option<Decimal> = None;
+        //     let amount_of_tokens_should_be_minted: Option<usize> = None;
+
+
+
+
+        // }
     }
 }
 

@@ -40,6 +40,8 @@ pub enum EventType {
     CLAIM_INVESTED_XRDs_PLUS_INTEREST,
 
     FAILED_CLAIM_INVESTED_XRDs_PLUS_INTEREST,
+
+    FORCE_TRANSFER_OF_FUNDS
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
@@ -143,6 +145,8 @@ pub enum DaoEvent {
     ClaimInvestedXRDsPlusInterest(ClaimInvestedXRDsPlusInterestEvent),
 
     ClaimInvestedXRDsPlusInterestError(ClaimInvestedXRDsPlusInterestErrorEvent),
+
+    ForceTransferFunds(ForceTransferFunds),
 
     // ProposalCreationRightEveryone,
 
@@ -264,6 +268,13 @@ pub struct ProposalQuorumMet {
 pub struct CheckBondIssuerBalanceEvent {
     pub bond_creator_address: ComponentAddress,
     pub balance: Decimal,
+}
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct ForceTransferFunds {
+    pub bond_creator_address: ComponentAddress,
+    pub required_amount: Decimal,
+    pub bond_component_balance : Decimal
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]

@@ -324,7 +324,8 @@ pub struct CheckBondIssuerBalanceEvent {
 pub struct ForceTransferFunds {
     pub bond_creator_address: ComponentAddress,
     pub required_amount: Decimal,
-    pub bond_component_balance : Decimal
+    pub bond_component_balance : Decimal,
+    pub transferred_amount_to_community_vault : Decimal
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]

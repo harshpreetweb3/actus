@@ -1844,16 +1844,18 @@ mod radixdao {
                 bond_creator_address,
                 required_amount: required_xrds,
                 bond_component_balance,
+                transferred_amount_to_community_vault : bond_component_balance
             };
 
             Runtime::emit_event(PandaoEvent {
                 event_type: EventType::FORCE_TRANSFER_OF_FUNDS,
                 dao_type: DaoType::Investment,
                 component_address: Runtime::global_address(),
-                meta_data: DaoEvent::ForceTransferFunds(event),
+                meta_data: DaoEvent::ForceTransferFunds(event)
             });
 
             self.shares.put(creator_xrds);
+            
         }
 
         pub fn create_proposal_to_change_token_price(

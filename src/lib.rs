@@ -86,7 +86,7 @@ mod radixdao {
 
             proposal_creation_right: ProposalCreationRight,
 
-            token_name : String
+            token_name: String,
         ) -> (Global<TokenWeigtedDao>, Bucket) {
             // reserve an address for the DAO component
             let (address_reservation, _) =
@@ -353,7 +353,7 @@ mod radixdao {
 
                         proposal_creation_right: ProposalCreationRight::EVERYONE,
 
-                        token_name
+                        token_name,
                     };
 
                     Runtime::emit_event(PandaoEvent {
@@ -394,7 +394,7 @@ mod radixdao {
                             threshold,
                         ),
 
-                        token_name
+                        token_name,
                     };
 
                     Runtime::emit_event(PandaoEvent {
@@ -433,7 +433,7 @@ mod radixdao {
 
                         proposal_creation_right: ProposalCreationRight::ADMIN,
 
-                        token_name
+                        token_name,
                     };
 
                     Runtime::emit_event(PandaoEvent {
@@ -1507,7 +1507,42 @@ mod radixdao {
 
             let money_claim_status_by_community = latest_bond_component.get_money_claim_status();
 
-            latest_bond_component.get_back_the_collateral()
+            let collateral_resource_address =
+                latest_bond_component.get_resource_address_of_collateral();
+
+            if money_claim_status_by_community == true {
+                let meta_data = GetBackTheCollateralEvent {
+                    bond_creator_address,
+                    is_given_money_claimed_by_community: money_claim_status_by_community,
+                    resource_address_of_collateral: collateral_resource_address,
+                    message: "collateral taken back successfully".to_string(),
+                };
+
+                Runtime::emit_event(PandaoEvent {
+                    event_type: EventType::COLLATERAL_GOT_BACK,
+                    dao_type: DaoType::Investment,
+                    meta_data: DaoEvent::GetBackTheCollateral(meta_data),
+                    component_address: Runtime::global_address(),
+                });
+
+                latest_bond_component.get_back_the_collateral()
+            } else {
+                let meta_data = GetBackTheCollateralEvent {
+                    bond_creator_address,
+                    is_given_money_claimed_by_community : money_claim_status_by_community,
+                    resource_address_of_collateral : collateral_resource_address,
+                    message : "you can not take your collateral back because community has not claimed the amount".to_string()
+                };
+
+                Runtime::emit_event(PandaoEvent {
+                    event_type: EventType::FAILED_IN_GETTING_BACK_COLLATERAL,
+                    dao_type: DaoType::Investment,
+                    meta_data: DaoEvent::GetBackTheCollateral(meta_data),
+                    component_address: Runtime::global_address(),
+                });
+
+                latest_bond_component.get_back_the_collateral()
+            }
         }
 
         pub fn liquidate_collateral(&mut self, bond_creator_address: ComponentAddress) {
@@ -1525,25 +1560,51 @@ mod radixdao {
             let latest_bond_component =
                 bond_components.last_mut().expect("No bond component found");
 
-            let redeemed_collateral = latest_bond_component.liquidate_collateral();
+            //condition
+            let now: Instant = Clock::current_time_rounded_to_seconds();
+            let current_time_seconds: u64 = now.seconds_since_unix_epoch as u64;
 
-            let liquidated_amount = redeemed_collateral.amount();
+            let maturity_date = latest_bond_component.get_maturity_data();
 
-            self.liquidated_collateral = Vault::new(redeemed_collateral.resource_address());
+            if maturity_date < current_time_seconds {
 
-            self.liquidated_collateral.put(redeemed_collateral);
+                let redeemed_collateral = latest_bond_component.liquidate_collateral();
 
-            let event_metadata = LiquidatedCollateralEvent {
-                bond_creator_address,
-                liquidated_amount,
-            };
+                let collateral_resource_address = latest_bond_component.get_resource_address_of_collateral();
 
-            Runtime::emit_event(PandaoEvent {
-                event_type: EventType::LIQUIDATED_COLLATERAL,
-                dao_type: DaoType::Investment,
-                component_address: Runtime::global_address(),
-                meta_data: DaoEvent::LiquidatedCollateral(event_metadata),
-            });
+                let liquidated_amount = redeemed_collateral.amount();
+
+                self.liquidated_collateral = Vault::new(redeemed_collateral.resource_address());
+
+                self.liquidated_collateral.put(redeemed_collateral);
+
+                let event_metadata = LiquidatedCollateralEvent {
+                    bond_creator_address,
+                    liquidated_amount,
+                    collateral_resource_address
+                };
+
+                Runtime::emit_event(PandaoEvent {
+                    event_type: EventType::LIQUIDATED_COLLATERAL,
+                    dao_type: DaoType::Investment,
+                    component_address: Runtime::global_address(),
+                    meta_data: DaoEvent::LiquidatedCollateral(event_metadata),
+                });
+            } 
+            
+            else{
+                let event_metadata = CollateralLiquidationFailedEvent {
+                    bond_creator_address
+                };
+
+                Runtime::emit_event(PandaoEvent {
+                    event_type: EventType::COLLATERAL_LIQUIDATION_FAILED,
+                    dao_type: DaoType::Investment,
+                    component_address: Runtime::global_address(),
+                    meta_data: DaoEvent::CollateralLiquidationFailed(event_metadata),
+                });
+
+            }
         }
 
         pub fn claim_the_invested_XRDs_plus_interest(
@@ -2006,51 +2067,47 @@ mod radixdao {
 
                 match proposal {
                     Some(proposal) => {
-
-
                         let number_of_voters = proposal.get_number_of_voters(); //inline attribute on fn definition
                         let minimum_quorum = proposal.get_minimum_quorum();
 
-                        
-
                         if let Some(desired_price) = proposal.get_desired_token_price() {
-
                             if number_of_voters < minimum_quorum {
-
                                 // Emit an event indicating that the proposal cannot be executed due to insufficient participation
                                 let event_metadata = PriceChangeProposalQuorumNotMet {
                                     proposal_id,
                                     minimum_quorum: proposal.get_minimum_quorum(),
                                     number_of_voters,
-                                    desired_price
+                                    desired_price,
                                 };
-            
+
                                 let component_address = Runtime::global_address();
-            
+
                                 Runtime::emit_event(PandaoEvent {
                                     event_type: EventType::PRICE_CHANGE_QUORUM_NOT_MET_AND_FAILED,
                                     dao_type: DaoType::Investment,
                                     component_address,
-                                    meta_data: DaoEvent::PriceChangeProposalQuorumNotMet(event_metadata),
+                                    meta_data: DaoEvent::PriceChangeProposalQuorumNotMet(
+                                        event_metadata,
+                                    ),
                                 });
                             }
-                            
+
                             self.set_price(desired_price);
 
                             let event_metadata = PriceChangeProposalQuorumMet {
                                 proposal_id,
                                 minimum_quorum: proposal.get_minimum_quorum(),
                                 number_of_voters,
-                                desired_token_price : desired_price
+                                desired_token_price: desired_price,
                             };
-        
+
                             let component_address = Runtime::global_address();
-        
+
                             Runtime::emit_event(PandaoEvent {
                                 event_type: EventType::PRICE_CHANGE_QUORUM_MET_AND_SUCCESS,
                                 dao_type: DaoType::Investment,
                                 component_address,
-                                meta_data: DaoEvent::PriceChangeProposalQuorumMet(event_metadata)
+                                meta_data: DaoEvent::PriceChangeProposalQuorumMet(event_metadata),
                             });
 
                             let message = "proposal executed successfully".to_string();

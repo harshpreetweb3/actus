@@ -178,6 +178,10 @@
                 self.collateral.take(1)
             }
 
+            pub fn get_maturity_data(&self) -> u64{
+                self.maturity_date
+            }
+
             pub fn get_back_the_collateral(&mut self) -> Bucket {
                 
                 if self.successful_claim_by_community == true{
@@ -191,6 +195,10 @@
 
             pub fn get_money_claim_status(&self) -> bool{
                 self.successful_claim_by_community
+            }
+
+            pub fn get_resource_address_of_collateral(&self) -> ResourceAddress{
+                self.collateral.resource_address()
             }
 
             //GET BACK THE INVESTED XRD + INTEREST RATE

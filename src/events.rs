@@ -34,6 +34,8 @@ pub enum EventType {
 
     LIQUIDATED_COLLATERAL,
 
+    COLLATERAL_LIQUIDATION_FAILED,
+
     TAKE_OUT_INVESTED_XRDs,
 
     PUT_IN_MONEY_PLUS_INTEREST,
@@ -45,7 +47,11 @@ pub enum EventType {
 
     FAILED_CLAIM_INVESTED_XRDs_PLUS_INTEREST,
 
-    FORCE_TRANSFER_OF_FUNDS
+    FORCE_TRANSFER_OF_FUNDS,
+
+    COLLATERAL_GOT_BACK,
+
+    FAILED_IN_GETTING_BACK_COLLATERAL
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
@@ -162,6 +168,8 @@ pub enum DaoEvent {
 
     LiquidatedCollateral(LiquidatedCollateralEvent),
 
+    CollateralLiquidationFailed(CollateralLiquidationFailedEvent),
+
     TakeOutInvestedXRDs(TakeOutInvestedXRDsEvent),
 
     PutInMoneyPlusInterest(PutInMoneyPlusInterestEvent),
@@ -171,6 +179,8 @@ pub enum DaoEvent {
     ClaimInvestedXRDsPlusInterestError(ClaimInvestedXRDsPlusInterestErrorEvent),
 
     ForceTransferFunds(ForceTransferFunds),
+
+    GetBackTheCollateral(GetBackTheCollateralEvent)
 
     // ProposalCreationRightEveryone,
 
@@ -321,14 +331,32 @@ pub struct ForceTransferFunds {
 pub struct LiquidatedCollateralEvent {
     pub bond_creator_address: ComponentAddress,
     pub liquidated_amount: Decimal,
+    pub collateral_resource_address : ResourceAddress
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
-pub struct GettingCollateralBackEvent {
+pub struct CollateralLiquidationFailedEvent {
     pub bond_creator_address: ComponentAddress,
-    pub message: String,
-    pub resource_address_of_collateral : ResourceAddress
+    // pub liquidated_amount: Decimal,
 }
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct GetBackTheCollateralEvent {
+    pub bond_creator_address: ComponentAddress,
+
+    pub is_given_money_claimed_by_community : bool,
+    // pub liquidated_amount: Decimal,
+    pub resource_address_of_collateral : ResourceAddress,
+
+    pub message : String
+}
+
+// #[derive(ScryptoSbor, ScryptoEvent)]
+// pub struct GettingCollateralBackEvent {
+//     pub bond_creator_address: ComponentAddress,
+//     pub message: String,
+//     pub resource_address_of_collateral : ResourceAddress
+// }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub struct TakeOutInvestedXRDsEvent {

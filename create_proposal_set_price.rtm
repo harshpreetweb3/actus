@@ -1,0 +1,44 @@
+ CALL_METHOD
+             Address("account_tdx_2_128yjd03xwxxk5pd0sn25k5g6kx372muf5z9gzkcmmkrndsh0wsk22j")
+             "withdraw"
+             Address("resource_tdx_2_1t4lv0sddxdurk9dy6584qutfvlvx4h8nh6gczu2agpjr53rm97p68v")
+             Decimal("1")
+         ;
+
+ TAKE_FROM_WORKTOP
+             Address("resource_tdx_2_1t4lv0sddxdurk9dy6584qutfvlvx4h8nh6gczu2agpjr53rm97p68v")
+             Decimal("1")
+             Bucket("bucket1")
+         ;
+
+CALL_METHOD
+  Address("component_tdx_2_1czte0fdn93flxprmj6vsxnv6r9dwre6t89fnj4nyjsuukrxdf02usz")
+  "create_proposal_to_change_token_price"
+  "change the price to 10"
+  "change the price to 10"
+  1u8
+  Tuple(
+    2025u32,
+    1u8,
+    13u8,
+    20u8,
+    46u8,
+    00u8
+  )
+  Tuple(
+    2025u32,
+    1u8,
+    13u8,
+    21u8,
+    05u8,
+    00u8
+  )
+  Enum<1u8>(
+    Address("account_tdx_2_128yjd03xwxxk5pd0sn25k5g6kx372muf5z9gzkcmmkrndsh0wsk22j")
+  )
+  Bucket("bucket1")
+  Enum<1u8>()
+  Enum<1u8>(
+    Decimal("15")
+  )
+;

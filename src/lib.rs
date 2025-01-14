@@ -610,6 +610,7 @@ mod radixdao {
 
             let amount_of_tokens_should_be_minted: Option<usize> = None;
             let desired_token_price: Option<Decimal> = None;
+            let desired_token_buy_back_price: Option<Decimal> = None;
 
             let global_proposal_component: Global<TokenWeightProposal>;
 
@@ -629,6 +630,7 @@ mod radixdao {
                         amount_of_tokens_should_be_minted,
                         VotingType::ResourceHold,
                         desired_token_price,
+                        desired_token_buy_back_price,
                     );
                 }
                 VotingType::Equality => {
@@ -646,6 +648,7 @@ mod radixdao {
                         amount_of_tokens_should_be_minted,
                         VotingType::Equality,
                         desired_token_price,
+                        desired_token_buy_back_price,
                     );
                 }
             }
@@ -685,6 +688,7 @@ mod radixdao {
                             governance_token_or_owner_token_address.resource_address(),
                         token_type: VotingType::ResourceHold,
                         desired_token_price,
+                        desired_token_buy_back_price,
                     };
 
                     let component_address = Runtime::global_address();
@@ -714,6 +718,7 @@ mod radixdao {
                             governance_token_or_owner_token_address.resource_address(),
                         token_type: VotingType::Equality,
                         desired_token_price,
+                        desired_token_buy_back_price,
                     };
 
                     let component_address = Runtime::global_address();
@@ -984,12 +989,6 @@ mod radixdao {
             your_address: ComponentAddress,
             nft_as_collateral: Bucket, //OK -> Account address is of ComponentAddress Type
         ) -> Global<ZeroCouponBond> {
-            // Ensure the address has not created any bonds already
-            // assert!(
-            //     !self.zero_coupon_bond.contains_key(&your_address),
-            //     "This address has already created a bond and cannot create another."
-            // );
-
             let collateral_resource_address = nft_as_collateral.resource_address();
 
             let bond_component = ZeroCouponBond::instantiate_zerocouponbond(
@@ -1311,6 +1310,7 @@ mod radixdao {
             let address_issued_bonds_to_sell: Option<ComponentAddress> = None;
             let target_xrd_amount: Option<Decimal> = None;
             let desired_token_price: Option<Decimal> = None;
+            let desired_token_buy_back_price: Option<Decimal> = None;
 
             let global_proposal_component: Global<TokenWeightProposal>;
 
@@ -1330,6 +1330,7 @@ mod radixdao {
                         amount_of_tokens_should_be_minted,
                         VotingType::ResourceHold,
                         desired_token_price,
+                        desired_token_buy_back_price,
                     );
                 }
                 VotingType::Equality => {
@@ -1347,6 +1348,7 @@ mod radixdao {
                         amount_of_tokens_should_be_minted,
                         VotingType::Equality,
                         desired_token_price,
+                        desired_token_buy_back_price,
                     );
                 }
             }
@@ -1386,6 +1388,7 @@ mod radixdao {
                             governance_token_or_owner_token_address.resource_address(),
                         token_type: VotingType::ResourceHold,
                         desired_token_price,
+                        desired_token_buy_back_price,
                     };
 
                     let component_address = Runtime::global_address();
@@ -1415,6 +1418,7 @@ mod radixdao {
                             governance_token_or_owner_token_address.resource_address(),
                         token_type: VotingType::Equality,
                         desired_token_price,
+                        desired_token_buy_back_price,
                     };
 
                     let component_address = Runtime::global_address();
@@ -1443,8 +1447,9 @@ mod radixdao {
                 .put(self.dao_token_resource_manager.mint(token_number_to_mint));
         }
 
-        pub fn set_price(&mut self, desired_token_price: Decimal) {
-            self.token_price = desired_token_price
+        pub fn set_price(&mut self, desired_token_price: Decimal, desired_buy_back_price: Decimal) {
+            self.token_price = desired_token_price;
+            self.buy_back_price = desired_buy_back_price;
         }
 
         pub fn execute_proposal_to_mint_more_tokens(
@@ -1567,10 +1572,10 @@ mod radixdao {
             let maturity_date = latest_bond_component.get_maturity_data();
 
             if maturity_date < current_time_seconds {
-
                 let redeemed_collateral = latest_bond_component.liquidate_collateral();
 
-                let collateral_resource_address = latest_bond_component.get_resource_address_of_collateral();
+                let collateral_resource_address =
+                    latest_bond_component.get_resource_address_of_collateral();
 
                 let liquidated_amount = redeemed_collateral.amount();
 
@@ -1581,7 +1586,7 @@ mod radixdao {
                 let event_metadata = LiquidatedCollateralEvent {
                     bond_creator_address,
                     liquidated_amount,
-                    collateral_resource_address
+                    collateral_resource_address,
                 };
 
                 Runtime::emit_event(PandaoEvent {
@@ -1590,11 +1595,9 @@ mod radixdao {
                     component_address: Runtime::global_address(),
                     meta_data: DaoEvent::LiquidatedCollateral(event_metadata),
                 });
-            } 
-            
-            else{
+            } else {
                 let event_metadata = CollateralLiquidationFailedEvent {
-                    bond_creator_address
+                    bond_creator_address,
                 };
 
                 Runtime::emit_event(PandaoEvent {
@@ -1603,7 +1606,6 @@ mod radixdao {
                     component_address: Runtime::global_address(),
                     meta_data: DaoEvent::CollateralLiquidationFailed(event_metadata),
                 });
-
             }
         }
 
@@ -1844,18 +1846,17 @@ mod radixdao {
                 bond_creator_address,
                 required_amount: required_xrds,
                 bond_component_balance,
-                transferred_amount_to_community_vault : bond_component_balance
+                transferred_amount_to_community_vault: bond_component_balance,
             };
 
             Runtime::emit_event(PandaoEvent {
                 event_type: EventType::FORCE_TRANSFER_OF_FUNDS,
                 dao_type: DaoType::Investment,
                 component_address: Runtime::global_address(),
-                meta_data: DaoEvent::ForceTransferFunds(event)
+                meta_data: DaoEvent::ForceTransferFunds(event),
             });
 
             self.shares.put(creator_xrds);
-            
         }
 
         pub fn create_proposal_to_change_token_price(
@@ -1869,6 +1870,7 @@ mod radixdao {
             governance_token_or_owner_token_address: Bucket,
             voting_type: VotingType,
             desired_token_price: Option<Decimal>,
+            desired_token_buy_back_price: Option<Decimal>,
         ) -> (
             Global<crate::proposal::pandao_praposal::TokenWeightProposal>,
             String,
@@ -1937,6 +1939,7 @@ mod radixdao {
                         amount_of_tokens_should_be_minted,
                         VotingType::ResourceHold,
                         desired_token_price,
+                        desired_token_buy_back_price,
                     );
                 }
                 VotingType::Equality => {
@@ -1954,6 +1957,7 @@ mod radixdao {
                         amount_of_tokens_should_be_minted,
                         VotingType::Equality,
                         desired_token_price,
+                        desired_token_buy_back_price,
                     );
                 }
             }
@@ -1993,6 +1997,7 @@ mod radixdao {
                             governance_token_or_owner_token_address.resource_address(),
                         token_type: VotingType::ResourceHold,
                         desired_token_price,
+                        desired_token_buy_back_price,
                     };
 
                     let component_address = Runtime::global_address();
@@ -2022,6 +2027,7 @@ mod radixdao {
                             governance_token_or_owner_token_address.resource_address(),
                         token_type: VotingType::Equality,
                         desired_token_price,
+                        desired_token_buy_back_price,
                     };
 
                     let component_address = Runtime::global_address();
@@ -2073,48 +2079,59 @@ mod radixdao {
                         let minimum_quorum = proposal.get_minimum_quorum();
 
                         if let Some(desired_price) = proposal.get_desired_token_price() {
-                            if number_of_voters < minimum_quorum {
-                                // Emit an event indicating that the proposal cannot be executed due to insufficient participation
-                                let event_metadata = PriceChangeProposalQuorumNotMet {
+
+                            if let Some(buy_back) = proposal.get_desired_token_buy_back_price() {
+
+                                if number_of_voters < minimum_quorum {
+                                    // Emit an event indicating that the proposal cannot be executed due to insufficient participation
+                                    let event_metadata = PriceChangeProposalQuorumNotMet {
+                                        proposal_id,
+                                        minimum_quorum: proposal.get_minimum_quorum(),
+                                        number_of_voters,
+                                        desired_price,
+                                        desired_token_buy_back_price : buy_back
+                                    };
+
+                                    let component_address = Runtime::global_address();
+
+                                    Runtime::emit_event(PandaoEvent {
+                                        event_type:
+                                            EventType::PRICE_CHANGE_QUORUM_NOT_MET_AND_FAILED,
+                                        dao_type: DaoType::Investment,
+                                        component_address,
+                                        meta_data: DaoEvent::PriceChangeProposalQuorumNotMet(
+                                            event_metadata,
+                                        ),
+                                    });
+                                }
+
+                                self.set_price(desired_price, buy_back);
+
+                                let event_metadata = PriceChangeProposalQuorumMet {
                                     proposal_id,
                                     minimum_quorum: proposal.get_minimum_quorum(),
                                     number_of_voters,
-                                    desired_price,
+                                    desired_token_price: desired_price,
+                                    desired_token_buy_back_price : buy_back
                                 };
 
                                 let component_address = Runtime::global_address();
 
                                 Runtime::emit_event(PandaoEvent {
-                                    event_type: EventType::PRICE_CHANGE_QUORUM_NOT_MET_AND_FAILED,
+                                    event_type: EventType::PRICE_CHANGE_QUORUM_MET_AND_SUCCESS,
                                     dao_type: DaoType::Investment,
                                     component_address,
-                                    meta_data: DaoEvent::PriceChangeProposalQuorumNotMet(
+                                    meta_data: DaoEvent::PriceChangeProposalQuorumMet(
                                         event_metadata,
                                     ),
                                 });
+
+                                let message = "proposal executed successfully".to_string();
+
+                                return Ok(message);
+                            } else {
+                                return Err(format!("desired token buy back price is not present in a proposal with id : {proposal_id}"));
                             }
-
-                            self.set_price(desired_price);
-
-                            let event_metadata = PriceChangeProposalQuorumMet {
-                                proposal_id,
-                                minimum_quorum: proposal.get_minimum_quorum(),
-                                number_of_voters,
-                                desired_token_price: desired_price,
-                            };
-
-                            let component_address = Runtime::global_address();
-
-                            Runtime::emit_event(PandaoEvent {
-                                event_type: EventType::PRICE_CHANGE_QUORUM_MET_AND_SUCCESS,
-                                dao_type: DaoType::Investment,
-                                component_address,
-                                meta_data: DaoEvent::PriceChangeProposalQuorumMet(event_metadata),
-                            });
-
-                            let message = "proposal executed successfully".to_string();
-
-                            return Ok(message);
                         } else {
                             return Err(format!("desired token price is not present in a proposal with id : {proposal_id}"));
                         }

@@ -45,7 +45,8 @@ mod pandao_praposal {
         pub proposal_creation_status : bool,
         pub proposal_execution_status : bool,
         pub proposal_denied_status : bool,
-        pub desired_token_price : Option<Decimal>
+        pub desired_token_price : Option<Decimal>,
+        pub desired_buy_back_price : Option<Decimal>
         // pub number_of_people_voted: i32
     }
 
@@ -64,7 +65,8 @@ mod pandao_praposal {
             proposal_creator_address : Option<ComponentAddress>,
             amount_of_tokens_should_be_minted : Option<usize>,
             voting_type: VotingType,
-            desired_token_price : Option<Decimal>
+            desired_token_price : Option<Decimal>,
+            desired_buy_back_price : Option<Decimal>
         ) -> (Global<TokenWeightProposal >, GlobalAddressReservation) {
             
             let (address_reservation, _) =
@@ -93,7 +95,8 @@ mod pandao_praposal {
                 proposal_creation_status,
                 proposal_execution_status,
                 proposal_denied_status,
-                desired_token_price
+                desired_token_price,
+                desired_buy_back_price
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::None)
@@ -216,6 +219,10 @@ mod pandao_praposal {
 
         pub fn get_desired_token_price(&self) -> Option<Decimal>{
             self.desired_token_price
+        }
+
+        pub fn get_desired_token_buy_back_price(&self) -> Option<Decimal>{
+            self.desired_buy_back_price
         }
 
     }

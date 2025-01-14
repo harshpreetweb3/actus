@@ -136,7 +136,8 @@ pub struct PraposalMetadata {
     pub proposal_id : usize,
     pub governance_token_or_owner_token_address : ResourceAddress,
     pub token_type : VotingType,
-    pub desired_token_price : Option<Decimal>
+    pub desired_token_price : Option<Decimal>,
+    pub desired_token_buy_back_price : Option<Decimal>
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
@@ -294,7 +295,8 @@ pub struct PriceChangeProposalQuorumNotMet {
     pub proposal_id: usize,
     pub minimum_quorum: usize,
     pub number_of_voters: usize,
-    pub desired_price : Decimal
+    pub desired_price : Decimal,
+    pub desired_token_buy_back_price : Decimal
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
@@ -311,7 +313,8 @@ pub struct PriceChangeProposalQuorumMet {
     pub proposal_id: usize,
     pub minimum_quorum: usize,
     pub number_of_voters: usize,
-    pub desired_token_price : Decimal
+    pub desired_token_price : Decimal,
+    pub desired_token_buy_back_price : Decimal
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]

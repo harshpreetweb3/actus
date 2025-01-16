@@ -1,0 +1,24 @@
+CALL_FUNCTION
+  Address("package_tdx_2_1p5a0arpnr7jv3mh7udr23j7vndua4adxh5h4f5ysasc5fjx54s2dsh")
+  "TokenWeigtedDao"
+  "initiate"
+  "wmk"
+  10000i32
+  0u8
+  Decimal("5")
+  Decimal("2")
+  "https://image-cdn.essentiallysports.com/wp-content/uploads/Elon-Musk-Wario-640x853.jpg"
+  "https://image-cdn.essentiallysports.com/wp-content/uploads/Elon-Musk-Wario-640x853.jpg"
+  "wmk"
+  Array<String>("wmk")
+  "wmk"
+  Enum<0u8>()
+  "wmk"
+;
+
+CALL_METHOD
+    Address("account_tdx_2_128yjd03xwxxk5pd0sn25k5g6kx372muf5z9gzkcmmkrndsh0wsk22j")
+    "try_deposit_batch_or_refund"
+    Expression("ENTIRE_WORKTOP")
+    Enum<0u8>()
+;

@@ -694,7 +694,7 @@ mod radixdao {
                     let component_address = Runtime::global_address();
 
                     Runtime::emit_event(PandaoEvent {
-                        event_type: EventType::PRAPOSAL,
+                        event_type: EventType::PROPOSAL_TO_PURCHASE_BOND,
                         dao_type: DaoType::Investment,
                         meta_data: DaoEvent::PraposalDeployment(praposal_metadata),
                         component_address,
@@ -724,7 +724,7 @@ mod radixdao {
                     let component_address = Runtime::global_address();
 
                     Runtime::emit_event(PandaoEvent {
-                        event_type: EventType::PRAPOSAL,
+                        event_type: EventType::PROPOSAL_TO_PURCHASE_BOND,
                         dao_type: DaoType::Investment,
                         meta_data: DaoEvent::PraposalDeployment(praposal_metadata),
                         component_address,
@@ -842,6 +842,7 @@ mod radixdao {
                         number_of_voters,
                         bond_creator_address,
                         contract_identity: bond_uid.clone(),
+                        proposal_type : EventType::PROPOSAL_TO_PURCHASE_BOND
                     };
 
                     let component_address = Runtime::global_address();
@@ -880,6 +881,7 @@ mod radixdao {
                     //bond creator address
                     bond_creator_address,
                     contract_identity: bond_uid,
+                    proposal_type : EventType::PROPOSAL_TO_PURCHASE_BOND
                 };
 
                 let component_address = Runtime::global_address();
@@ -2003,7 +2005,7 @@ mod radixdao {
                     let component_address = Runtime::global_address();
 
                     Runtime::emit_event(PandaoEvent {
-                        event_type: EventType::PROPOSAL_TO_MINT_MORE_TOKENS,
+                        event_type: EventType::PROPOSAL_TO_CHANGE_TOKEN_PRICE,
                         dao_type: DaoType::Investment,
                         meta_data: DaoEvent::PraposalDeployment(praposal_metadata),
                         component_address,
@@ -2033,7 +2035,7 @@ mod radixdao {
                     let component_address = Runtime::global_address();
 
                     Runtime::emit_event(PandaoEvent {
-                        event_type: EventType::PROPOSAL_TO_MINT_MORE_TOKENS,
+                        event_type: EventType::PROPOSAL_TO_CHANGE_TOKEN_PRICE,
                         dao_type: DaoType::Investment,
                         meta_data: DaoEvent::PraposalDeployment(praposal_metadata),
                         component_address,
@@ -2089,7 +2091,8 @@ mod radixdao {
                                         minimum_quorum: proposal.get_minimum_quorum(),
                                         number_of_voters,
                                         desired_price,
-                                        desired_token_buy_back_price : buy_back
+                                        desired_token_buy_back_price : buy_back,
+                                        proposal_type : EventType::PROPOSAL_TO_CHANGE_TOKEN_PRICE
                                     };
 
                                     let component_address = Runtime::global_address();
@@ -2112,7 +2115,8 @@ mod radixdao {
                                     minimum_quorum: proposal.get_minimum_quorum(),
                                     number_of_voters,
                                     desired_token_price: desired_price,
-                                    desired_token_buy_back_price : buy_back
+                                    desired_token_buy_back_price : buy_back,
+                                    proposal_type : EventType::PROPOSAL_TO_CHANGE_TOKEN_PRICE 
                                 };
 
                                 let component_address = Runtime::global_address();

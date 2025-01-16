@@ -1,5 +1,10 @@
 # actus
 
+## new comps
+```
+component_tdx_2_1cp7qafj8p44kxzes3w0r9krjmsww0l73akxwxmrtk02kwtq88cv8a7
+```
+
 ## deployment tx:  
 ```
 Transaction ID: 

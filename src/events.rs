@@ -5,6 +5,8 @@ use scrypto::prelude::*;
 pub enum EventType {
 
     PROPOSAL_TO_MINT_MORE_TOKENS,
+
+    PROPOSAL_TO_CHANGE_TOKEN_PRICE,
     
     DEPLOYMENT,
 
@@ -13,6 +15,8 @@ pub enum EventType {
     TOKEN_SELL,
 
     PRAPOSAL,
+
+    PROPOSAL_TO_PURCHASE_BOND,
 
     VOTE,
 
@@ -287,7 +291,8 @@ pub struct ProposalQuorumNotMet {
     pub minimum_quorum: usize,
     pub number_of_voters: usize,
     pub bond_creator_address : ComponentAddress,
-    pub contract_identity : String
+    pub contract_identity : String,
+    pub proposal_type : EventType
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
@@ -296,7 +301,8 @@ pub struct PriceChangeProposalQuorumNotMet {
     pub minimum_quorum: usize,
     pub number_of_voters: usize,
     pub desired_price : Decimal,
-    pub desired_token_buy_back_price : Decimal
+    pub desired_token_buy_back_price : Decimal,
+    pub proposal_type : EventType
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
@@ -305,7 +311,8 @@ pub struct ProposalQuorumMet {
     pub minimum_quorum: usize,
     pub number_of_voters: usize,
     pub bond_creator_address : ComponentAddress,
-    pub contract_identity : String
+    pub contract_identity : String,
+    pub proposal_type : EventType
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
@@ -314,7 +321,8 @@ pub struct PriceChangeProposalQuorumMet {
     pub minimum_quorum: usize,
     pub number_of_voters: usize,
     pub desired_token_price : Decimal,
-    pub desired_token_buy_back_price : Decimal
+    pub desired_token_buy_back_price : Decimal,
+    pub proposal_type : EventType
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]

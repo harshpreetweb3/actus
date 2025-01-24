@@ -383,7 +383,8 @@ pub struct PutInMoneyPlusInterestEvent {
     pub amount_required_by_the_community : Decimal,
     pub amount_taken_by_the_community : Decimal,
     pub extra_amount_given_back_to_the_sender : Decimal,
-    pub more_xrd_amount_required_by_the_community : Decimal
+    pub more_xrd_amount_required_by_the_community : Decimal,
+    pub collateral_given_back : bool
 }
 
 

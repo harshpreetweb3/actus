@@ -241,6 +241,7 @@
             pub fn bond_creator_money_status(&self) -> bool{
                 self.money_taken_by_creator
             }
+            
 
             pub fn put_in_money_plus_interest_for_the_community_to_redeem(&mut self, mut borrowed_xrd_with_interest : Bucket) -> Bucket {
 

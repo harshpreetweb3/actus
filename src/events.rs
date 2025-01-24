@@ -391,12 +391,16 @@ pub struct PutInMoneyPlusInterestEvent {
 pub struct ClaimInvestedXRDsPlusInterestEvent {
     pub bond_creator_address: ComponentAddress,
     pub claimed_amount: Decimal,
-    pub amount_required_by_the_community : Decimal
+    pub amount_required_by_the_community : Decimal,
+    pub collateral_liquidated : bool
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub struct ClaimInvestedXRDsPlusInterestErrorEvent {
     pub bond_creator_address: ComponentAddress,
     pub required_amount_by_the_community: Decimal,
-    pub balance_of_bond_issuer : Decimal
+    pub balance_of_bond_issuer : Decimal,
+    pub collateral_liquidated : bool,
+    pub collateral_resource_address : ResourceAddress,
+    pub liquidated_amount : Decimal
 }

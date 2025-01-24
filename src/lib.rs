@@ -1638,10 +1638,27 @@ mod radixdao {
                 latest_bond_component.check_the_balance_of_bond_issuer();
 
             if balance_in_latest_bond_component < balance_required_by_the_community {
+
+                //perform liquidation
+                let redeemed_collateral = latest_bond_component.liquidate_collateral();
+
+                let collateral_resource_address =
+                    latest_bond_component.get_resource_address_of_collateral();
+
+                let liquidated_amount = redeemed_collateral.amount();
+
+                self.liquidated_collateral = Vault::new(redeemed_collateral.resource_address());
+
+                self.liquidated_collateral.put(redeemed_collateral);
+
+
                 let event_metadata = ClaimInvestedXRDsPlusInterestErrorEvent {
                     bond_creator_address,
                     required_amount_by_the_community: balance_required_by_the_community,
                     balance_of_bond_issuer: balance_in_latest_bond_component,
+                    collateral_liquidated : true,
+                    collateral_resource_address,
+                    liquidated_amount
                 };
 
                 Runtime::emit_event(PandaoEvent {
@@ -1665,6 +1682,7 @@ mod radixdao {
                     bond_creator_address,
                     claimed_amount,
                     amount_required_by_the_community: balance_required_by_the_community,
+                    collateral_liquidated : false
                 };
 
                 Runtime::emit_event(PandaoEvent {
@@ -1720,6 +1738,7 @@ mod radixdao {
             bond_creator_address: ComponentAddress,
             borrowed_xrd_with_interest: Bucket,
         ) -> Bucket {
+
             assert!(
                 self.zero_coupon_bond.contains_key(&bond_creator_address),
                 "No bonds created by the specified address."
@@ -1735,6 +1754,8 @@ mod radixdao {
                 bond_components.last_mut().expect("No bond component found");
 
             let amount_getting_deposited = borrowed_xrd_with_interest.amount();
+
+
 
             // Get Required Amount
             let required_amount = latest_bond_component.balance_required_by_the_community();

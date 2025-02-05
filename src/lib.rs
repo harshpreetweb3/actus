@@ -3,24 +3,45 @@ mod events;
 use crate::events::*;
 mod proposal;
 use scrypto::prelude::*;
-
 mod zerocouponbond;
+
+#[derive(ScryptoSbor, NonFungibleData, Clone)]
+struct ExecutiveBadge {
+    executive_number: u64,
+    executive_name: String,
+}
+
+#[derive(ScryptoSbor, Clone)]
+pub struct ApprovalDetails {
+    approver_address: ComponentAddress,
+    approver_response: ApprovalResponse,
+    user_address: ComponentAddress,
+    approvals: u32,
+    denials: u32,
+}
+
+#[derive(ScryptoSbor, Clone)] // Enum to represent approval responses
+pub enum ApprovalResponse {
+    Approve,
+    Deny,
+}
 
 #[blueprint]
 #[events(PandaoEvent, DaoEvent, TokenWightedDeployment, DaoType, EventType)]
 mod radixdao {
 
-    use std::collections::HashMap;
-
     use super::*;
+    use crate::zerocouponbond::BondDetails;
     use proposal::pandao_praposal::TokenWeightProposal;
     use scrypto::address;
-    // use scrypto_test::prelude::drop_fungible_bucket;
+    use std::collections::HashMap;
     use zerocouponbond::zerocouponbond::ZeroCouponBond;
 
-    // Use the ZeroCouponBond from the zerocouponbond module
-
-    use crate::zerocouponbond::BondDetails;
+    // enable_method_auth!{
+    //     methods {
+    //         initiate => restrict_to : [OWNER];
+    //     }
+    // }
 
     pub struct TokenWeigtedDao {
         // current_praposal: Option<Global<TokenWeightProposal>>,
@@ -52,6 +73,12 @@ mod radixdao {
         proposal_creation_right: ProposalCreationRight,
 
         liquidated_collateral: Vault,
+
+        investment_record: HashMap<ComponentAddress, Decimal>,
+
+        withdraw_requests: HashMap<ComponentAddress, Decimal>,
+
+        approval_details: HashMap<ComponentAddress, ApprovalDetails>,
     }
 
     impl TokenWeigtedDao {
@@ -129,6 +156,13 @@ mod radixdao {
 
             let component: Global<TokenWeigtedDao>;
 
+            //create a executive badge resource manager
+            // const executive_badge_manager = ResourceBuilder::new_integer_non_fungible::<ExecutiveBadge>(OwnerRole : None).metadata(metadata!(
+            //     init {
+            //         "name" => ""
+            //     }
+            // ))
+
             match proposal_creation_right {
                 ProposalCreationRight::EVERYONE => {
                     component = Self {
@@ -160,6 +194,12 @@ mod radixdao {
                         proposal_creation_right: ProposalCreationRight::EVERYONE,
 
                         liquidated_collateral: Vault::new(XRD),
+
+                        investment_record: HashMap::new(),
+
+                        withdraw_requests: HashMap::new(),
+
+                        approval_details: HashMap::new(),
                     }
                     .instantiate()
                     .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
@@ -200,6 +240,12 @@ mod radixdao {
                         ),
 
                         liquidated_collateral: Vault::new(XRD),
+
+                        investment_record: HashMap::new(),
+
+                        withdraw_requests: HashMap::new(),
+
+                        approval_details: HashMap::new(),
                     }
                     .instantiate()
                     .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
@@ -238,6 +284,12 @@ mod radixdao {
                         proposal_creation_right: ProposalCreationRight::ADMIN,
 
                         liquidated_collateral: Vault::new(XRD),
+
+                        investment_record: HashMap::new(),
+
+                        withdraw_requests: HashMap::new(),
+
+                        approval_details: HashMap::new(),
                     }
                     .instantiate()
                     .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
@@ -248,80 +300,7 @@ mod radixdao {
                 }
             }
 
-            // let component = Self {
-            //     token_price: token_price.clone(),
-
-            //     organization_name: organization_name.clone(),
-
-            //     dao_token_address: dao_token_address.clone(),
-
-            //     owner_token_addresss: owner_token_addresss.clone(),
-
-            //     current_praposals: HashMap::new(),
-
-            //     dao_token_resource_manager: voting_power_tokens.resource_manager(),
-
-            //     dao_token: Vault::with_bucket(voting_power_tokens),
-
-            //     buy_back_price: token_buy_back_price.clone(),
-
-            //     shares: Vault::new(XRD),
-
-            //     bonds: HashMap::new(),
-
-            //     // Initialize zero_coupon_bond as None
-            //     zero_coupon_bond: HashMap::new(),
-
-            //     contributors: HashMap::new(),
-
-            //     proposal_creation_right: proposal_creation_right.clone(),
-            // }
-            // .instantiate()
-            // .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
-            //     owner_token_addresss.clone()
-            // ))))
-            // .with_address(address_reservation.clone())
-            // .globalize();
-
             let component_address = component.address();
-
-            // create a metadata for event named TokenWeightedDeployment
-            // let event_metadata = TokenWightedDeployment {
-            //     component_address,
-
-            //     token_address: dao_token_address,
-
-            //     owner_token_address: owner_token_addresss,
-
-            //     community_name: organization_name,
-
-            //     community_image: org_ico_url,
-
-            //     token_price,
-
-            //     token_buy_back_price,
-
-            //     description,
-
-            //     total_token: token_supply,
-
-            //     token_image: power_token_url,
-
-            //     tags: tags.clone(),
-
-            //     purpose: purpose.clone(),
-            // };
-
-            // emit event | event emission
-            // Runtime::emit_event(PandaoEvent {
-            //     event_type: EventType::DEPLOYMENT,
-
-            //     dao_type: DaoType::Investment,
-
-            //     component_address,
-
-            //     meta_data: DaoEvent::TokenWeightedDEployment(event_metadata),
-            // });
 
             // Emit specific events based on the proposal creation right
             match proposal_creation_right {
@@ -449,24 +428,33 @@ mod radixdao {
             (component, owner_badge)
         }
 
+        // pub fn mint_executive_badge() {}
+
         pub fn obtain_community_token(
             &mut self,
             mut xrd: Bucket,
             token_amount: Decimal,
-            // minter_address: Option<String>,
+            account_address: ComponentAddress, // minter_address: Option<String>,
         ) -> (Bucket, Bucket) {
             assert!(
                 (self.token_price * token_amount) <= xrd.amount(),
                 "you are paying an insufficient amount"
             );
 
+            // let test = xrd.amount();
+
             let collected_xrd = xrd.take(self.token_price * token_amount);
-
             let power_share = self.dao_token.take(token_amount);
-
             let amount_paid = self.token_price * token_amount;
-
             self.shares.put(collected_xrd);
+
+            //record investment
+
+            if let Some(current_investment) = self.investment_record.get_mut(&account_address) {
+                *current_investment += amount_paid;
+            } else {
+                self.investment_record.insert(account_address, amount_paid);
+            }
 
             //emit event
 
@@ -493,6 +481,86 @@ mod radixdao {
             });
 
             (xrd, power_share)
+        }
+
+        pub fn get_investment_details(&self, address: ComponentAddress) -> Result<Decimal, String> {
+            if let Some(amt) = self.investment_record.get(&address) {
+                Ok(amt.clone())
+            } else {
+                Err("No investment is made by this account address".to_string())
+            }
+        }
+
+        pub fn request_withdrawal(
+            &mut self,
+            requester_address: ComponentAddress,
+            requested_amount: Decimal,
+        ) -> Result<(), String> {
+            //Check if the sender has invested any amount
+            let invested_amount =
+                if let Some(amount) = self.investment_record.get(&requester_address) {
+                    amount.clone()
+                } else {
+                    return Err("No investment found for the sender".to_string());
+                };
+
+            // Calculate the maximum allowed withdrawal amount (40% of invested amount)
+            let max_withdrawal_amount = invested_amount * Decimal::from(40) / Decimal::from(100);
+
+            // Ensure the requested amount does not exceed the maximum allowed withdrawal amount
+            if requested_amount > max_withdrawal_amount {
+                return Err(format!(
+                    "Requested amount {} exceeds the maximum allowed withdrawal amount {}",
+                    requested_amount, max_withdrawal_amount
+                ));
+            }
+
+            // Store the withdrawal request
+            self.withdraw_requests
+                .insert(requester_address, requested_amount);
+
+            Ok(())
+        }
+
+        pub fn approve_withdrawal_request(
+            &mut self,
+            approver_address: ComponentAddress,
+            user_address: ComponentAddress,
+            response: ApprovalResponse
+        ) -> Result<(), String> {
+            
+            // Check if the user has a withdrawal request
+            if !self.withdraw_requests.contains_key(&user_address) {
+                
+                return Err(format!(
+                    "No withdrawal request found for this user address",
+                    // user_address
+                ));
+            }
+
+            // Get or initialize the approval details for the user
+            let approval_details =
+                self.approval_details
+                    .entry(user_address)
+                    .or_insert(ApprovalDetails {
+                        approver_address,
+                        approver_response: response.clone(),
+                        user_address,
+                        approvals: 0,
+                        denials: 0,
+                    });
+
+            // Update the approval details based on the response
+            match response {
+                ApprovalResponse::Approve => approval_details.approvals += 1,
+                ApprovalResponse::Deny => approval_details.denials += 1,
+            }
+
+            Ok(())
+        }
+
+        pub fn get_approval_details(&self, user_address: ComponentAddress) -> Option<ApprovalDetails> {
+            self.approval_details.get(&user_address).cloned()
         }
 
         pub fn withdraw_power(&mut self, voting_power: Bucket) -> Bucket {
@@ -842,7 +910,7 @@ mod radixdao {
                         number_of_voters,
                         bond_creator_address,
                         contract_identity: bond_uid.clone(),
-                        proposal_type : EventType::PROPOSAL_TO_PURCHASE_BOND
+                        proposal_type: EventType::PROPOSAL_TO_PURCHASE_BOND,
                     };
 
                     let component_address = Runtime::global_address();
@@ -881,7 +949,7 @@ mod radixdao {
                     //bond creator address
                     bond_creator_address,
                     contract_identity: bond_uid,
-                    proposal_type : EventType::PROPOSAL_TO_PURCHASE_BOND
+                    proposal_type: EventType::PROPOSAL_TO_PURCHASE_BOND,
                 };
 
                 let component_address = Runtime::global_address();
@@ -1638,7 +1706,6 @@ mod radixdao {
                 latest_bond_component.check_the_balance_of_bond_issuer();
 
             if balance_in_latest_bond_component < balance_required_by_the_community {
-
                 //perform liquidation
                 let redeemed_collateral = latest_bond_component.liquidate_collateral();
 
@@ -1651,14 +1718,13 @@ mod radixdao {
 
                 self.liquidated_collateral.put(redeemed_collateral);
 
-
                 let event_metadata = ClaimInvestedXRDsPlusInterestErrorEvent {
                     bond_creator_address,
                     required_amount_by_the_community: balance_required_by_the_community,
                     balance_of_bond_issuer: balance_in_latest_bond_component,
-                    collateral_liquidated : true,
+                    collateral_liquidated: true,
                     collateral_resource_address,
-                    liquidated_amount
+                    liquidated_amount,
                 };
 
                 Runtime::emit_event(PandaoEvent {
@@ -1682,7 +1748,7 @@ mod radixdao {
                     bond_creator_address,
                     claimed_amount,
                     amount_required_by_the_community: balance_required_by_the_community,
-                    collateral_liquidated : false
+                    collateral_liquidated: false,
                 };
 
                 Runtime::emit_event(PandaoEvent {
@@ -1738,7 +1804,6 @@ mod radixdao {
             bond_creator_address: ComponentAddress,
             borrowed_xrd_with_interest: Bucket,
         ) -> (Bucket, Bucket) {
-
             assert!(
                 self.zero_coupon_bond.contains_key(&bond_creator_address),
                 "No bonds created by the specified address."
@@ -1755,21 +1820,20 @@ mod radixdao {
 
             let amount_getting_deposited = borrowed_xrd_with_interest.amount();
 
-
-
             // Get Required Amount
             let required_amount = latest_bond_component.balance_required_by_the_community();
 
             let extra_money = latest_bond_component
                 .put_in_money_plus_interest_for_the_community_to_redeem(borrowed_xrd_with_interest);
 
-            let balance_of_bond_component = latest_bond_component.check_the_balance_of_bond_issuer();
+            let balance_of_bond_component =
+                latest_bond_component.check_the_balance_of_bond_issuer();
 
             //required amount?
-            let balance_required_by_community = latest_bond_component.balance_required_by_the_community();
+            let balance_required_by_community =
+                latest_bond_component.balance_required_by_the_community();
 
-            if balance_of_bond_component >= balance_required_by_community{
-
+            if balance_of_bond_component >= balance_required_by_community {
                 let collateral_being_taken_back = latest_bond_component.get_back_the_collateral();
 
                 let extra_money_amount = extra_money.amount();
@@ -1781,7 +1845,7 @@ mod radixdao {
                     amount_taken_by_the_community: required_amount,
                     extra_amount_given_back_to_the_sender: extra_money_amount,
                     more_xrd_amount_required_by_the_community: Decimal::zero(),
-                    collateral_given_back : true
+                    collateral_given_back: true,
                 };
 
                 Runtime::emit_event(PandaoEvent {
@@ -1792,13 +1856,11 @@ mod radixdao {
                 });
 
                 (extra_money, collateral_being_taken_back)
-
-            }else{
-
+            } else {
                 let extra_money_amount = extra_money.amount();
 
                 //event emission
-    
+
                 if amount_getting_deposited >= required_amount {
                     let event_metadata_if = PutInMoneyPlusInterestEvent {
                         bond_creator_address,
@@ -1807,9 +1869,9 @@ mod radixdao {
                         amount_taken_by_the_community: required_amount,
                         extra_amount_given_back_to_the_sender: extra_money_amount,
                         more_xrd_amount_required_by_the_community: Decimal::zero(),
-                        collateral_given_back : false
+                        collateral_given_back: false,
                     };
-    
+
                     Runtime::emit_event(PandaoEvent {
                         event_type: EventType::PUT_IN_MONEY_PLUS_INTEREST,
                         dao_type: DaoType::Investment,
@@ -1819,7 +1881,7 @@ mod radixdao {
                 } else {
                     let more_xrd_amount_required_by_the_community =
                         required_amount - amount_getting_deposited;
-    
+
                     let event_metadata_else = PutInMoneyPlusInterestEvent {
                         bond_creator_address,
                         amount_getting_deposited,
@@ -1827,9 +1889,9 @@ mod radixdao {
                         amount_taken_by_the_community: amount_getting_deposited,
                         extra_amount_given_back_to_the_sender: extra_money_amount,
                         more_xrd_amount_required_by_the_community,
-                        collateral_given_back : false
+                        collateral_given_back: false,
                     };
-    
+
                     Runtime::emit_event(PandaoEvent {
                         event_type: EventType::PUT_IN_LESS_MONEY_PLUS_INTEREST,
                         dao_type: DaoType::Investment,
@@ -1837,16 +1899,14 @@ mod radixdao {
                         meta_data: DaoEvent::PutInMoneyPlusInterest(event_metadata_else),
                     });
                 }
-    
-                let collateral_resource_address = latest_bond_component.get_resource_address_of_collateral();
+
+                let collateral_resource_address =
+                    latest_bond_component.get_resource_address_of_collateral();
 
                 let empty_bucket = Bucket::new(collateral_resource_address);
-    
+
                 (extra_money, empty_bucket)
-
             }
-
-
         }
 
         pub fn check_the_balance_of_bond_issuer(
@@ -2144,9 +2204,7 @@ mod radixdao {
                         let minimum_quorum = proposal.get_minimum_quorum();
 
                         if let Some(desired_price) = proposal.get_desired_token_price() {
-
                             if let Some(buy_back) = proposal.get_desired_token_buy_back_price() {
-
                                 if number_of_voters < minimum_quorum {
                                     // Emit an event indicating that the proposal cannot be executed due to insufficient participation
                                     let event_metadata = PriceChangeProposalQuorumNotMet {
@@ -2154,8 +2212,8 @@ mod radixdao {
                                         minimum_quorum: proposal.get_minimum_quorum(),
                                         number_of_voters,
                                         desired_price,
-                                        desired_token_buy_back_price : buy_back,
-                                        proposal_type : EventType::PROPOSAL_TO_CHANGE_TOKEN_PRICE
+                                        desired_token_buy_back_price: buy_back,
+                                        proposal_type: EventType::PROPOSAL_TO_CHANGE_TOKEN_PRICE,
                                     };
 
                                     let component_address = Runtime::global_address();
@@ -2178,8 +2236,8 @@ mod radixdao {
                                     minimum_quorum: proposal.get_minimum_quorum(),
                                     number_of_voters,
                                     desired_token_price: desired_price,
-                                    desired_token_buy_back_price : buy_back,
-                                    proposal_type : EventType::PROPOSAL_TO_CHANGE_TOKEN_PRICE 
+                                    desired_token_buy_back_price: buy_back,
+                                    proposal_type: EventType::PROPOSAL_TO_CHANGE_TOKEN_PRICE,
                                 };
 
                                 let component_address = Runtime::global_address();

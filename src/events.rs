@@ -1,5 +1,7 @@
 use scrypto::prelude::*;
 
+use crate::ApprovalResponse;
+
 #[allow(non_camel_case_types)]
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub enum EventType {
@@ -44,7 +46,6 @@ pub enum EventType {
 
     PUT_IN_MONEY_PLUS_INTEREST,
 
-
     PUT_IN_LESS_MONEY_PLUS_INTEREST,
 
     CLAIM_INVESTED_XRDs_PLUS_INTEREST,
@@ -55,7 +56,11 @@ pub enum EventType {
 
     COLLATERAL_GOT_BACK,
 
-    FAILED_IN_GETTING_BACK_COLLATERAL
+    FAILED_IN_GETTING_BACK_COLLATERAL,
+
+    WITHDRAWAL_REQUEST,
+
+    APPROVE_WITHDRAWAL_REQUEST,
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
@@ -185,13 +190,17 @@ pub enum DaoEvent {
 
     ForceTransferFunds(ForceTransferFunds),
 
-    GetBackTheCollateral(GetBackTheCollateralEvent)
+    GetBackTheCollateral(GetBackTheCollateralEvent),
 
     // ProposalCreationRightEveryone,
 
     // ProposalCreationRightTokenHolderThreshold(Decimal),
 
     // ProposalCreationRightAdmin
+
+    WithdrawalRequest(WithdrawalRequestEvent),
+
+    ApproveWithdrawalRequest(ApproveWithdrawalRequestEvent),
 
 
 }
@@ -404,4 +413,17 @@ pub struct ClaimInvestedXRDsPlusInterestErrorEvent {
     pub collateral_liquidated : bool,
     pub collateral_resource_address : ResourceAddress,
     pub liquidated_amount : Decimal
+}
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct WithdrawalRequestEvent {
+    pub requester_address: ComponentAddress,
+    pub requested_amount: Decimal,
+}
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct ApproveWithdrawalRequestEvent {
+    pub approver_address: ComponentAddress,
+    pub user_address: ComponentAddress,
+    pub response: ApprovalResponse,
 }

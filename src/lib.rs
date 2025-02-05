@@ -519,6 +519,21 @@ mod radixdao {
             self.withdraw_requests
                 .insert(requester_address, requested_amount);
 
+            // Emit event
+
+           // Emit event
+            let event_metadata = WithdrawalRequestEvent {
+                requester_address,
+                requested_amount,
+            };
+
+            Runtime::emit_event(PandaoEvent {
+                event_type: EventType::WITHDRAWAL_REQUEST,
+                dao_type: DaoType::Investment,
+                component_address: Runtime::global_address(),
+                meta_data: DaoEvent::WithdrawalRequest(event_metadata),
+            });
+
             Ok(())
         }
 
@@ -555,6 +570,19 @@ mod radixdao {
                 ApprovalResponse::Approve => approval_details.approvals += 1,
                 ApprovalResponse::Deny => approval_details.denials += 1,
             }
+
+            let event_metadata = ApproveWithdrawalRequestEvent {
+                approver_address,
+                user_address,
+                response,
+            };
+        
+            Runtime::emit_event(PandaoEvent {
+                event_type: EventType::APPROVE_WITHDRAWAL_REQUEST,
+                dao_type: DaoType::Investment,
+                component_address: Runtime::global_address(),
+                meta_data: DaoEvent::ApproveWithdrawalRequest(event_metadata),
+            });
 
             Ok(())
         }

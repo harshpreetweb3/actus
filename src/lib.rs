@@ -79,6 +79,8 @@ mod radixdao {
         withdraw_requests: HashMap<ComponentAddress, Decimal>,
 
         approval_details: HashMap<ComponentAddress, ApprovalDetails>,
+
+        executives: HashSet<ComponentAddress>
     }
 
     impl TokenWeigtedDao {
@@ -200,6 +202,8 @@ mod radixdao {
                         withdraw_requests: HashMap::new(),
 
                         approval_details: HashMap::new(),
+
+                        executives : HashSet::new()
                     }
                     .instantiate()
                     .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
@@ -246,6 +250,8 @@ mod radixdao {
                         withdraw_requests: HashMap::new(),
 
                         approval_details: HashMap::new(),
+
+                        executives : HashSet::new()
                     }
                     .instantiate()
                     .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
@@ -290,6 +296,8 @@ mod radixdao {
                         withdraw_requests: HashMap::new(),
 
                         approval_details: HashMap::new(),
+
+                        executives : HashSet::new()
                     }
                     .instantiate()
                     .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
@@ -483,6 +491,8 @@ mod radixdao {
             (xrd, power_share)
         }
 
+        
+
         pub fn get_investment_details(&self, address: ComponentAddress) -> Result<Decimal, String> {
             if let Some(amt) = self.investment_record.get(&address) {
                 Ok(amt.clone())
@@ -496,6 +506,7 @@ mod radixdao {
             requester_address: ComponentAddress,
             requested_amount: Decimal,
         ) -> Result<(), String> {
+
             //Check if the sender has invested any amount
             let invested_amount =
                 if let Some(amount) = self.investment_record.get(&requester_address) {
@@ -526,12 +537,17 @@ mod radixdao {
             &mut self,
             approver_address: ComponentAddress,
             user_address: ComponentAddress,
-            response: ApprovalResponse
+            response: ApprovalResponse,
         ) -> Result<(), String> {
+            // check whether a caller is executive or not
             
+            // Check if the caller is an executive
+            if !self.executives.contains(&approver_address) {
+                return Err(format!("Caller is not an executive"));
+            }
+
             // Check if the user has a withdrawal request
             if !self.withdraw_requests.contains_key(&user_address) {
-                
                 return Err(format!(
                     "No withdrawal request found for this user address",
                     // user_address
@@ -559,9 +575,109 @@ mod radixdao {
             Ok(())
         }
 
-        pub fn get_approval_details(&self, user_address: ComponentAddress) -> Option<ApprovalDetails> {
+        pub fn get_approval_details(
+            &self,
+            user_address: ComponentAddress,
+        ) -> Option<ApprovalDetails> {
             self.approval_details.get(&user_address).cloned()
         }
+
+        pub fn add_executives(&mut self, new_executives: [ComponentAddress; 3]) {
+
+            for address in new_executives {
+                self.executives.insert(address);
+            }
+        
+            // Emit event
+            // let event_metadata = ExecutivesAdded {
+            //     new_executives: new_executives.to_vec(),
+            // };
+        
+            // let component_address = Runtime::global_address();
+        
+            // Runtime::emit_event(PandaoEvent {
+            //     event_type: EventType::EXECUTIVES_ADDED,
+            //     dao_type: DaoType::Investment,
+            //     component_address,
+            //     meta_data: DaoEvent::ExecutivesAdded(event_metadata),
+            // });
+        }
+
+        pub fn withdraw_money(
+            &mut self,
+            mut user_address: Global<Account> //ComponentAddress,
+        ) -> Result<(), String> {
+            // Check if the user has a withdrawal request
+            let requested_amount = self.withdraw_requests.get(&user_address.address()).ok_or_else(|| {
+                format!("No withdrawal request found for user address")
+            })?;
+        
+            // Get the approval details for the user
+            let approval_details = self.approval_details.get(&user_address.address()).ok_or_else(|| {
+                format!("No approval details found for user address")
+            })?;
+        
+            // Check the approval and denial counts
+            if approval_details.approvals > approval_details.denials {
+
+
+                // Allow the withdrawal
+                // let event_metadata = WithdrawalApproved {
+                //     user_address,
+                //     requested_amount: *requested_amount,
+                // };
+        
+                // let component_address = Runtime::global_address();
+        
+                // Runtime::emit_event(PandaoEvent {
+                //     event_type: EventType::WITHDRAWAL_APPROVED,
+                //     dao_type: DaoType::Investment,
+                //     component_address,
+                //     meta_data: DaoEvent::WithdrawalApproved(event_metadata),
+                // });
+        
+                // Transfer the requested amount from the treasury to a new bucket
+                let mut withdrawal_bucket = self.shares.take(*requested_amount);
+
+                user_address.try_deposit_or_abort(withdrawal_bucket, None);
+
+
+        
+                // Remove the withdrawal request and approval details
+                self.withdraw_requests.remove(&user_address.address());
+                self.approval_details.remove(&user_address.address());
+        
+                // Return the bucket with the requested amount
+                Ok(())
+            } else {
+                // Emit event indicating the request is still not acknowledged or denied
+                // let event_metadata = WithdrawalNotAcknowledged {
+                //     user_address,
+                //     approvals: approval_details.approvals,
+                //     denials: approval_details.denials,
+                // };
+        
+                // let component_address = Runtime::global_address();
+        
+                // Runtime::emit_event(PandaoEvent {
+                //     event_type: EventType::WITHDRAWAL_NOT_ACKNOWLEDGED,
+                //     dao_type: DaoType::Investment,
+                //     component_address,
+                //     meta_data: DaoEvent::WithdrawalNotAcknowledged(event_metadata),
+                // });
+        
+                // Return an error message
+                Err(format!(
+                    "Withdrawal request for user address is still not acknowledged by executives"
+                ))
+            }
+        }
+        
+        
+        pub fn get_executives(&self) -> Vec<ComponentAddress> {
+            self.executives.iter().cloned().collect()
+        }
+        
 
         pub fn withdraw_power(&mut self, voting_power: Bucket) -> Bucket {
             // put the voting power back

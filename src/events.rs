@@ -95,7 +95,7 @@ pub struct TokenWightedDeployment {
 
     pub token_name : String,
 
-    pub executive_token_address: ResourceAddress
+    // pub executive_token_address: ResourceAddress
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]

@@ -30,6 +30,8 @@ pub enum ApprovalResponse {
 #[events(PandaoEvent, DaoEvent, TokenWightedDeployment, DaoType, EventType)]
 mod radixdao {
 
+    
+
     use super::*;
     use crate::zerocouponbond::BondDetails;
     use proposal::pandao_praposal::TokenWeightProposal;
@@ -41,6 +43,25 @@ mod radixdao {
     //     methods {
     //         initiate => restrict_to : [OWNER];
     //     }
+    // }
+
+    // enable_method_auth! {
+    //     // define auth rules
+    //     roles {
+    //         executive => updatable_by: [OWNER];
+    //         // staff => updatable_by: [manager, OWNER];
+    //     }
+        // decide which methods are public and which are restricted to certain roles
+        // methods {
+        //     buy_candy => PUBLIC;
+        //     buy_chocolate_egg => PUBLIC;
+        //     get_prices => PUBLIC;
+        //     set_candy_price => restrict_to: [manager, OWNER];
+        //     set_chocolate_egg_price => restrict_to: [manager, OWNER];
+        //     mint_staff_badge => restrict_to: [manager, OWNER];
+        //     restock_store => restrict_to: [staff, manager, OWNER];
+        //     withdraw_earnings => restrict_to: [OWNER];
+        // }
     // }
 
     pub struct TokenWeigtedDao {
@@ -82,7 +103,9 @@ mod radixdao {
 
         executives: HashSet<ComponentAddress>,
 
-        executive_token_address : ResourceAddress
+        // executive_token_address: ResourceAddress
+
+        executive_badge_resource_manager : NonFungibleResourceManager
     }
 
     impl TokenWeigtedDao {
@@ -118,9 +141,9 @@ mod radixdao {
             proposal_creation_right: ProposalCreationRight,
 
             token_name: String,
-        ) -> (Global<TokenWeigtedDao>, Bucket, Bucket) {
+        ) -> (Global<TokenWeigtedDao>, Bucket) {
             // reserve an address for the DAO component
-            let (address_reservation, _) =
+            let (address_reservation, component_address) =
                 Runtime::allocate_component_address(TokenWeigtedDao::blueprint_id());
 
             let owner_badge_description = format!("{}'s owner badge", &organization_name);
@@ -143,24 +166,55 @@ mod radixdao {
 
             let executive_badge_description = format!("{}'s executive badge", &organization_name);
 
-            let executive_badges : Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
-            .divisibility(0)
-            .metadata(metadata!{
-                init{
-                    "name" => executive_badge_description, locked;
-                    "icon_url" => Url::of(&org_ico_url), locked;
-                }
-            })
-            .mint_roles(mint_roles! {
-                // A good minting rule is described in example 08
-                minter => rule!(allow_all);
-                minter_updater => rule!(deny_all);
-            })
-            .mint_initial_supply(3)
-            .into();
+            // let executive_badges : Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
+            // .divisibility(0)
+            // .metadata(metadata!{
+            //     init{
+            //         "name" => executive_badge_description, locked;
+            //         "icon_url" => Url::of(&org_ico_url), locked;
+            //     }
+            // })
+            // .mint_roles(mint_roles! {
+            //     // A good minting rule is described in example 08
+            //     minter => rule!(allow_all);
+            //     minter_updater => rule!(deny_all);
+            // })
+            // .mint_initial_supply(3)
+            // .into();
 
-            let executive_token_address = executive_badges.resource_address();
+            // let executive_token_address = executive_badges.resource_address();
 
+            // create a new Staff Badge resource manager
+            let executive_badges_manager =  
+                ResourceBuilder::new_integer_non_fungible::<ExecutiveBadge>(OwnerRole::None)
+                    .metadata(metadata!(
+                        init {
+                            "name" => executive_badge_description, locked;
+                        }
+                    ))
+                    .mint_roles(mint_roles! {
+                        minter => rule!(require(global_caller(component_address)));
+                        minter_updater => rule!(deny_all);
+                    })
+                    .recall_roles(recall_roles! {
+                        recaller => rule!(require_any_of(vec![  
+                                owner_badge.resource_address(),
+                                // manager_badge.resource_address()
+                            ]));
+                        recaller_updater => rule!(deny_all);
+                    })
+                    .burn_roles(burn_roles! {
+                        burner => rule!(require_any_of(vec![
+                                owner_badge.resource_address(),
+                                // manager_badge.resource_address(),
+                            ]));
+                        burner_updater => rule!(deny_all);
+                    })
+                    // starting with no initial supply means a resource manger is produced instead of a bucket
+                    .create_with_no_initial_supply();
+
+
+            
 
             // create nft to be sold for voting purpose
             let dao_token_description = format!("{} voting share", token_name);
@@ -180,13 +234,6 @@ mod radixdao {
             let owner_token_addresss = owner_badge.resource_address();
 
             let component: Global<TokenWeigtedDao>;
-
-            //create a executive badge resource manager
-            // const executive_badge_manager = ResourceBuilder::new_integer_non_fungible::<ExecutiveBadge>(OwnerRole : None).metadata(metadata!(
-            //     init {
-            //         "name" => ""
-            //     }
-            // ))
 
             match proposal_creation_right {
                 ProposalCreationRight::EVERYONE => {
@@ -226,14 +273,19 @@ mod radixdao {
 
                         approval_details: HashMap::new(),
 
-                        executives : HashSet::new(),
+                        executives: HashSet::new(),
 
-                        executive_token_address
+                        executive_badge_resource_manager : executive_badges_manager
+
+                        // executive_token_address
                     }
                     .instantiate()
                     .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
                         owner_token_addresss.clone()
                     ))))
+                    // .roles(roles!(
+                    //     // manager => rule!(require(manager_badge.resource_address()));
+                    //     executive => rule!(require(executive_badges_manager.address()));))
                     .with_address(address_reservation.clone())
                     .globalize();
                 }
@@ -276,9 +328,11 @@ mod radixdao {
 
                         approval_details: HashMap::new(),
 
-                        executives : HashSet::new(),
+                        executives: HashSet::new(),
 
-                        executive_token_address
+                        executive_badge_resource_manager : executive_badges_manager
+
+                        // executive_token_address,
                     }
                     .instantiate()
                     .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
@@ -324,9 +378,11 @@ mod radixdao {
 
                         approval_details: HashMap::new(),
 
-                        executives : HashSet::new(),
+                        executives: HashSet::new(),
 
-                        executive_token_address
+                        executive_badge_resource_manager : executive_badges_manager
+
+                        // executive_token_address,
                     }
                     .instantiate()
                     .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
@@ -371,7 +427,7 @@ mod radixdao {
 
                         token_name,
 
-                        executive_token_address
+                        // executive_token_address,
                     };
 
                     Runtime::emit_event(PandaoEvent {
@@ -414,7 +470,7 @@ mod radixdao {
 
                         token_name,
 
-                        executive_token_address
+                        // executive_token_address,
                     };
 
                     Runtime::emit_event(PandaoEvent {
@@ -455,7 +511,7 @@ mod radixdao {
 
                         token_name,
 
-                        executive_token_address
+                        // executive_token_address,
                     };
 
                     Runtime::emit_event(PandaoEvent {
@@ -468,16 +524,31 @@ mod radixdao {
                 }
             }
 
-            (component, owner_badge, executive_badges)
+            (component, owner_badge)
         }
 
-        pub fn make_an_executive(&self, mut to_account: Global<Account>, resource : Bucket){
+        pub fn mint_executive_badge(&mut self, name: String, number: u64) -> NonFungibleBucket {
+
+            // mint and receive a new staff badge. requires an owner badge
+
+            let executive_badge_bucket = self.executive_badge_resource_manager.mint_non_fungible(
+                &NonFungibleLocalId::integer(number),
+                ExecutiveBadge {
+                    executive_name: name,
+                    executive_number: number
+                }
+            );
+
+            executive_badge_bucket
+        }
+
+        pub fn make_an_executive(&self, mut to_account: Global<Account>, resource: Bucket) {
             to_account.try_deposit_or_abort(resource, None);
         }
 
         // pub fn mint_executive_badge() {}
 
-        pub fn obtain_community_token(
+        pub fn obtain_community_token(  
             &mut self,
             mut xrd: Bucket,
             token_amount: Decimal,
@@ -530,8 +601,6 @@ mod radixdao {
             (xrd, power_share)
         }
 
-        
-
         pub fn get_investment_details(&self, address: ComponentAddress) -> Result<Decimal, String> {
             if let Some(amt) = self.investment_record.get(&address) {
                 Ok(amt.clone())
@@ -545,7 +614,6 @@ mod radixdao {
             requester_address: ComponentAddress,
             requested_amount: Decimal,
         ) -> Result<(), String> {
-
             //Check if the sender has invested any amount
             let invested_amount =
                 if let Some(amount) = self.investment_record.get(&requester_address) {
@@ -579,7 +647,7 @@ mod radixdao {
             response: ApprovalResponse,
         ) -> Result<(), String> {
             // check whether a caller is executive or not
-            
+
             // Check if the caller is an executive
             if !self.executives.contains(&approver_address) {
                 return Err(format!("Caller is not an executive"));
@@ -622,18 +690,17 @@ mod radixdao {
         }
 
         pub fn add_executives(&mut self, new_executives: [ComponentAddress; 3]) {
-
             for address in new_executives {
                 self.executives.insert(address);
             }
-        
+
             // Emit event
             // let event_metadata = ExecutivesAdded {
             //     new_executives: new_executives.to_vec(),
             // };
-        
+
             // let component_address = Runtime::global_address();
-        
+
             // Runtime::emit_event(PandaoEvent {
             //     event_type: EventType::EXECUTIVES_ADDED,
             //     dao_type: DaoType::Investment,
@@ -644,48 +711,46 @@ mod radixdao {
 
         pub fn withdraw_money(
             &mut self,
-            mut user_address: Global<Account> //ComponentAddress,
+            mut user_address: Global<Account>, //ComponentAddress,
         ) -> Result<(), String> {
             // Check if the user has a withdrawal request
-            let requested_amount = self.withdraw_requests.get(&user_address.address()).ok_or_else(|| {
-                format!("No withdrawal request found for user address")
-            })?;
-        
+            let requested_amount = self
+                .withdraw_requests
+                .get(&user_address.address())
+                .ok_or_else(|| format!("No withdrawal request found for user address"))?;
+
             // Get the approval details for the user
-            let approval_details = self.approval_details.get(&user_address.address()).ok_or_else(|| {
-                format!("No approval details found for user address")
-            })?;
-        
+            let approval_details = self
+                .approval_details
+                .get(&user_address.address())
+                .ok_or_else(|| format!("No approval details found for user address"))?;
+
             // Check the approval and denial counts
             if approval_details.approvals > approval_details.denials {
-
-
                 // Allow the withdrawal
                 // let event_metadata = WithdrawalApproved {
                 //     user_address,
                 //     requested_amount: *requested_amount,
                 // };
-        
+
                 // let component_address = Runtime::global_address();
-        
+
                 // Runtime::emit_event(PandaoEvent {
                 //     event_type: EventType::WITHDRAWAL_APPROVED,
                 //     dao_type: DaoType::Investment,
                 //     component_address,
                 //     meta_data: DaoEvent::WithdrawalApproved(event_metadata),
                 // });
-        
+
                 // Transfer the requested amount from the treasury to a new bucket
                 let mut withdrawal_bucket = self.shares.take(*requested_amount);
 
                 user_address.try_deposit_or_abort(withdrawal_bucket, None);
 
-
-        
                 // Remove the withdrawal request and approval details
                 self.withdraw_requests.remove(&user_address.address());
                 self.approval_details.remove(&user_address.address());
-        
+
                 // Return the bucket with the requested amount
                 Ok(())
             } else {
@@ -695,28 +760,26 @@ mod radixdao {
                 //     approvals: approval_details.approvals,
                 //     denials: approval_details.denials,
                 // };
-        
+
                 // let component_address = Runtime::global_address();
-        
+
                 // Runtime::emit_event(PandaoEvent {
                 //     event_type: EventType::WITHDRAWAL_NOT_ACKNOWLEDGED,
                 //     dao_type: DaoType::Investment,
                 //     component_address,
                 //     meta_data: DaoEvent::WithdrawalNotAcknowledged(event_metadata),
                 // });
-        
+
                 // Return an error message
                 Err(format!(
                     "Withdrawal request for user address is still not acknowledged by executives"
                 ))
             }
         }
-        
-        
+
         pub fn get_executives(&self) -> Vec<ComponentAddress> {
             self.executives.iter().cloned().collect()
         }
-        
 
         pub fn withdraw_power(&mut self, voting_power: Bucket) -> Bucket {
             // put the voting power back

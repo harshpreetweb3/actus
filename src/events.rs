@@ -93,7 +93,9 @@ pub struct TokenWightedDeployment {
 
     pub proposal_creation_right : ProposalCreationRight,
 
-    pub token_name : String
+    pub token_name : String,
+
+    pub executive_token_address: ResourceAddress
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]

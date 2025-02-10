@@ -80,7 +80,9 @@ mod radixdao {
 
         approval_details: HashMap<ComponentAddress, ApprovalDetails>,
 
-        executives: HashSet<ComponentAddress>
+        executives: HashSet<ComponentAddress>,
+
+        executive_token_address : ResourceAddress
     }
 
     impl TokenWeigtedDao {
@@ -116,7 +118,7 @@ mod radixdao {
             proposal_creation_right: ProposalCreationRight,
 
             token_name: String,
-        ) -> (Global<TokenWeigtedDao>, Bucket) {
+        ) -> (Global<TokenWeigtedDao>, Bucket, Bucket) {
             // reserve an address for the DAO component
             let (address_reservation, _) =
                 Runtime::allocate_component_address(TokenWeigtedDao::blueprint_id());
@@ -138,6 +140,27 @@ mod radixdao {
                 })
                 .mint_initial_supply(1)
                 .into();
+
+            let executive_badge_description = format!("{}'s executive badge", &organization_name);
+
+            let executive_badges : Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
+            .divisibility(0)
+            .metadata(metadata!{
+                init{
+                    "name" => executive_badge_description, locked;
+                    "icon_url" => Url::of(&org_ico_url), locked;
+                }
+            })
+            .mint_roles(mint_roles! {
+                // A good minting rule is described in example 08
+                minter => rule!(allow_all);
+                minter_updater => rule!(deny_all);
+            })
+            .mint_initial_supply(3)
+            .into();
+
+            let executive_token_address = executive_badges.resource_address();
+
 
             // create nft to be sold for voting purpose
             let dao_token_description = format!("{} voting share", token_name);
@@ -203,7 +226,9 @@ mod radixdao {
 
                         approval_details: HashMap::new(),
 
-                        executives : HashSet::new()
+                        executives : HashSet::new(),
+
+                        executive_token_address
                     }
                     .instantiate()
                     .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
@@ -251,7 +276,9 @@ mod radixdao {
 
                         approval_details: HashMap::new(),
 
-                        executives : HashSet::new()
+                        executives : HashSet::new(),
+
+                        executive_token_address
                     }
                     .instantiate()
                     .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
@@ -297,7 +324,9 @@ mod radixdao {
 
                         approval_details: HashMap::new(),
 
-                        executives : HashSet::new()
+                        executives : HashSet::new(),
+
+                        executive_token_address
                     }
                     .instantiate()
                     .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
@@ -341,6 +370,8 @@ mod radixdao {
                         proposal_creation_right: ProposalCreationRight::EVERYONE,
 
                         token_name,
+
+                        executive_token_address
                     };
 
                     Runtime::emit_event(PandaoEvent {
@@ -382,6 +413,8 @@ mod radixdao {
                         ),
 
                         token_name,
+
+                        executive_token_address
                     };
 
                     Runtime::emit_event(PandaoEvent {
@@ -421,6 +454,8 @@ mod radixdao {
                         proposal_creation_right: ProposalCreationRight::ADMIN,
 
                         token_name,
+
+                        executive_token_address
                     };
 
                     Runtime::emit_event(PandaoEvent {
@@ -433,7 +468,11 @@ mod radixdao {
                 }
             }
 
-            (component, owner_badge)
+            (component, owner_badge, executive_badges)
+        }
+
+        pub fn make_an_executive(&self, mut to_account: Global<Account>, resource : Bucket){
+            to_account.try_deposit_or_abort(resource, None);
         }
 
         // pub fn mint_executive_badge() {}

@@ -55,7 +55,13 @@ pub enum EventType {
 
     COLLATERAL_GOT_BACK,
 
-    FAILED_IN_GETTING_BACK_COLLATERAL
+    FAILED_IN_GETTING_BACK_COLLATERAL,
+
+    EXECUTIVE_BADGE_MINTED,
+
+    EXECUTIVE_APPOINTED,
+
+    WITHDRAWAL_REQUESTED,
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
@@ -187,13 +193,21 @@ pub enum DaoEvent {
 
     ForceTransferFunds(ForceTransferFunds),
 
-    GetBackTheCollateral(GetBackTheCollateralEvent)
+    GetBackTheCollateral(GetBackTheCollateralEvent),
 
     // ProposalCreationRightEveryone,
 
     // ProposalCreationRightTokenHolderThreshold(Decimal),
 
     // ProposalCreationRightAdmin
+
+    ExecutiveBadgeMinted(ExecutiveBadgeMinted),
+
+    ExecutiveAppointed(ExecutiveAppointed),
+
+    WithdrawalRequested(WithdrawalRequested)
+
+    
 
 
 }
@@ -406,4 +420,23 @@ pub struct ClaimInvestedXRDsPlusInterestErrorEvent {
     pub collateral_liquidated : bool,
     pub collateral_resource_address : ResourceAddress,
     pub liquidated_amount : Decimal
+}
+
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct ExecutiveBadgeMinted {
+    pub name: String,
+    pub number: u64,
+}
+
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct ExecutiveAppointed {
+    pub account_address: ComponentAddress,
+}
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct WithdrawalRequested {
+    pub bond_creator_address: ComponentAddress,
+    pub amount: Decimal,
 }

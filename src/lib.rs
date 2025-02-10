@@ -534,16 +534,39 @@ mod radixdao {
             let executive_badge_bucket = self.executive_badge_resource_manager.mint_non_fungible(
                 &NonFungibleLocalId::integer(number),
                 ExecutiveBadge {
-                    executive_name: name,
+                    executive_name: name.clone(),
                     executive_number: number
                 }
             );
+
+            let event_metadata = ExecutiveBadgeMinted {
+                name,
+                number,
+            };
+
+            Runtime::emit_event(events::PandaoEvent {
+                event_type: EventType::EXECUTIVE_BADGE_MINTED,
+                dao_type: DaoType::Investment,
+                component_address: Runtime::global_address(),
+                meta_data: DaoEvent::ExecutiveBadgeMinted(event_metadata),
+            });
 
             executive_badge_bucket
         }
 
         pub fn make_an_executive(&self, mut to_account: Global<Account>, resource: Bucket) {
             to_account.try_deposit_or_abort(resource, None);
+
+            let event_metadata = ExecutiveAppointed {
+                account_address: to_account.address(),
+            };
+
+            Runtime::emit_event(events::PandaoEvent {
+                event_type: EventType::EXECUTIVE_APPOINTED,
+                dao_type: DaoType::Investment,
+                component_address: Runtime::global_address(),
+                meta_data: DaoEvent::ExecutiveAppointed(event_metadata),
+            });
         }
 
         // pub fn mint_executive_badge() {}
@@ -636,6 +659,20 @@ mod radixdao {
             // Store the withdrawal request
             self.withdraw_requests
                 .insert(requester_address, requested_amount);
+
+            let event_metadata = WithdrawalRequested {
+                bond_creator_address: requester_address,
+                amount: requested_amount,
+            };
+
+            Runtime::emit_event(PandaoEvent {
+                event_type: EventType::WITHDRAWAL_REQUESTED,
+                dao_type: DaoType::Investment,
+                component_address: Runtime::global_address(),
+                meta_data: DaoEvent::WithdrawalRequested(event_metadata),
+            });
+
+
 
             Ok(())
         }

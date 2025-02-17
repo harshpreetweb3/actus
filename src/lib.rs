@@ -527,21 +527,29 @@ mod radixdao {
             (component, owner_badge)
         }
 
-        pub fn mint_executive_badge(&mut self, name: String, number: u64) -> NonFungibleBucket {
+        pub fn get_discriminator(&self) -> u64 {
+            let current_epoch = Runtime::current_epoch();
+            let unique_number = current_epoch.number();
+            unique_number
+        }
+
+        pub fn mint_executive_badge(&mut self, name: String) -> NonFungibleBucket {
 
             // mint and receive a new staff badge. requires an owner badge
 
+            let discriminator = self.get_discriminator();
+
             let executive_badge_bucket = self.executive_badge_resource_manager.mint_non_fungible(
-                &NonFungibleLocalId::integer(number),
+                &NonFungibleLocalId::integer(discriminator),
                 ExecutiveBadge {
-                    executive_name: name.clone(),
-                    executive_number: number
-                }
+                    executive_number: discriminator,
+                    executive_name: name.clone()
+                }   
             );
 
             let event_metadata = ExecutiveBadgeMinted {
                 name,
-                number,
+                number : discriminator
             };
 
             Runtime::emit_event(events::PandaoEvent {

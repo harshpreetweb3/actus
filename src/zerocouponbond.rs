@@ -175,6 +175,7 @@
                 let current_time_seconds: u64 = now.seconds_since_unix_epoch as u64;
                 //CHECK IF MATURITY DATE PASSED
                 assert!(self.maturity_date < current_time_seconds, "you cannot redeem the collateral because maturity date is not passed yet");
+                
                 self.collateral.take(1)
             }
 
@@ -184,13 +185,13 @@
 
             pub fn get_back_the_collateral(&mut self) -> Bucket {
                 
-                if self.successful_claim_by_community == true{
+                // if self.successful_claim_by_community == true{
                     //now that community claimed their interest plus principal amount
                     //now we can let the creator take back his collateral
                     self.collateral.take(1)
-                }else{
-                    Bucket::new(self.collateral.resource_address())
-                }
+                // }else{
+                //     Bucket::new(self.collateral.resource_address())
+                // }
             }
 
             pub fn get_money_claim_status(&self) -> bool{

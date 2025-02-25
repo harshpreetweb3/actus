@@ -533,6 +533,10 @@ mod radixdao {
             unique_number
         }
 
+        // pub fn generate_uuid(&self){
+        //     let a = Runtime::generate_ruid();
+        // }
+
         pub fn mint_executive_badge(&mut self, name: String) -> NonFungibleBucket {
 
             // mint and receive a new staff badge. requires an owner badge
@@ -547,9 +551,12 @@ mod radixdao {
                 }   
             );
 
-            let event_metadata = ExecutiveBadgeMinted {
+            let resource_address = executive_badge_bucket.resource_address();
+
+            let event_metadata = ExecutiveBadgeMinted { 
                 name,
-                number : discriminator
+                number : discriminator,
+                resource_address
             };
 
             Runtime::emit_event(events::PandaoEvent {
@@ -563,10 +570,14 @@ mod radixdao {
         }
 
         pub fn make_an_executive(&self, mut to_account: Global<Account>, resource: Bucket) {
+
+            let resource_address = resource.resource_address();
+
             to_account.try_deposit_or_abort(resource, None);
 
             let event_metadata = ExecutiveAppointed {
                 account_address: to_account.address(),
+                resource_address
             };
 
             Runtime::emit_event(events::PandaoEvent {
@@ -583,7 +594,7 @@ mod radixdao {
             &mut self,
             mut xrd: Bucket,
             token_amount: Decimal,
-            account_address: ComponentAddress, // minter_address: Option<String>,
+            account_address: ComponentAddress // minter_address: Option<String>,
         ) -> (Bucket, Bucket) {
             assert!(
                 (self.token_price * token_amount) <= xrd.amount(),
@@ -645,6 +656,7 @@ mod radixdao {
             requester_address: ComponentAddress,
             requested_amount: Decimal,
         ) -> Result<(), String> {
+
             //Check if the sender has invested any amount
             let invested_amount =
                 if let Some(amount) = self.investment_record.get(&requester_address) {
@@ -658,6 +670,22 @@ mod radixdao {
 
             // Ensure the requested amount does not exceed the maximum allowed withdrawal amount
             if requested_amount > max_withdrawal_amount {
+
+                //event emission is required
+                let event_metadata = WithdrawalRequested {
+                    requester_address,
+                    requested_amount,
+                    max_withdrawal_amount,
+                    withdrawal_occur : false
+                };
+
+                Runtime::emit_event(PandaoEvent{
+                event_type: EventType::WITHDRAWAL_REQUEST_FAILED,
+                dao_type: DaoType::Investment,
+                component_address: Runtime::global_address(),
+                meta_data: DaoEvent::WithdrawalRequestFailed(event_metadata)
+                });
+
                 return Err(format!(
                     "Requested amount {} exceeds the maximum allowed withdrawal amount {}",
                     requested_amount, max_withdrawal_amount
@@ -669,12 +697,14 @@ mod radixdao {
                 .insert(requester_address, requested_amount);
 
             let event_metadata = WithdrawalRequested {
-                bond_creator_address: requester_address,
-                amount: requested_amount,
+                requester_address,
+                requested_amount,
+                max_withdrawal_amount,
+                withdrawal_occur : true
             };
 
             Runtime::emit_event(PandaoEvent {
-                event_type: EventType::WITHDRAWAL_REQUESTED,
+                event_type: EventType::WITHDRAWAL_REQUESTED_SUCCESSFULLY,
                 dao_type: DaoType::Investment,
                 component_address: Runtime::global_address(),
                 meta_data: DaoEvent::WithdrawalRequested(event_metadata),
@@ -2100,6 +2130,8 @@ mod radixdao {
                 let collateral_being_taken_back = latest_bond_component.get_back_the_collateral();
 
                 let extra_money_amount = extra_money.amount();
+
+                // let required_now = latest_bond_component.balance_required_by_the_community();
 
                 let event_metadata_if = PutInMoneyPlusInterestEvent {
                     bond_creator_address,

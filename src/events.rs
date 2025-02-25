@@ -61,7 +61,9 @@ pub enum EventType {
 
     EXECUTIVE_APPOINTED,
 
-    WITHDRAWAL_REQUESTED,
+    WITHDRAWAL_REQUESTED_SUCCESSFULLY,
+
+    WITHDRAWAL_REQUEST_FAILED
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
@@ -205,7 +207,9 @@ pub enum DaoEvent {
 
     ExecutiveAppointed(ExecutiveAppointed),
 
-    WithdrawalRequested(WithdrawalRequested)
+    WithdrawalRequested(WithdrawalRequested),
+
+    WithdrawalRequestFailed(WithdrawalRequested)
 
     
 
@@ -427,16 +431,27 @@ pub struct ClaimInvestedXRDsPlusInterestErrorEvent {
 pub struct ExecutiveBadgeMinted {
     pub name: String,
     pub number: u64,
+    pub resource_address : ResourceAddress
 }
 
 
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub struct ExecutiveAppointed {
     pub account_address: ComponentAddress,
+    pub resource_address : ResourceAddress
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub struct WithdrawalRequested {
-    pub bond_creator_address: ComponentAddress,
-    pub amount: Decimal,
+    pub requester_address: ComponentAddress,
+    pub requested_amount: Decimal,
+    pub max_withdrawal_amount : Decimal,
+    pub withdrawal_occur : bool
 }
+
+// #[derive(ScryptoSbor, ScryptoEvent)]
+// pub struct WithdrawalRequestFailed {
+//     pub requester_address: ComponentAddress,
+//     pub amount: Decimal,
+//     pub max_withdrawal_amount : 
+// }

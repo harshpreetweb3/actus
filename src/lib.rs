@@ -588,7 +588,9 @@ mod radixdao {
             });
         }
 
-        // pub fn mint_executive_badge() {}
+        pub fn transfer_xrds_to_withdrawal_seeker(&self, to_account : Global<Account>, resource : Bucket) {
+
+        }
 
         pub fn obtain_community_token(  
             &mut self,
@@ -676,7 +678,7 @@ mod radixdao {
                     requester_address,
                     requested_amount,
                     max_withdrawal_amount,
-                    withdrawal_occur : false
+                    withdrawal_occured : false
                 };
 
                 Runtime::emit_event(PandaoEvent{
@@ -700,7 +702,7 @@ mod radixdao {
                 requester_address,
                 requested_amount,
                 max_withdrawal_amount,
-                withdrawal_occur : true
+                withdrawal_occured : true
             };
 
             Runtime::emit_event(PandaoEvent {
@@ -714,6 +716,33 @@ mod radixdao {
 
             Ok(())
         }
+
+        /* I need to store
+        - address of an individual who is approving or denying the request
+        - address of an individual whose request is being responded
+        - store number of approvals
+        - store number of denails
+
+        and keep in your mind that
+        there are only three individuals who will call this function
+
+        case 1:
+        if 2 approvals 1 denial
+        this fn should call another fn which will transfer the XRD from component's Account
+        to the requester's account
+
+        case 2:
+        if 1 approval 2 denials    
+        this fn will not tranfer any XRD from Component's account to request's account    
+
+        case 3:
+        if only one individual responds or two individuals respond
+        no transfer will occur
+
+        because
+        3 people must participate in responding the request
+         */
+        
 
         pub fn approve_withdrawal_request(
             &mut self,

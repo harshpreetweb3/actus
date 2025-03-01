@@ -446,7 +446,7 @@ pub struct WithdrawalRequested {
     pub requester_address: ComponentAddress,
     pub requested_amount: Decimal,
     pub max_withdrawal_amount : Decimal,
-    pub withdrawal_occur : bool
+    pub withdrawal_occured : bool
 }
 
 // #[derive(ScryptoSbor, ScryptoEvent)]

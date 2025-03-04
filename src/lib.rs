@@ -38,30 +38,59 @@ mod radixdao {
     use std::collections::HashMap;
     use zerocouponbond::zerocouponbond::ZeroCouponBond;
 
-    // enable_method_auth!{
-    //     methods {
-    //         initiate => restrict_to : [OWNER];
-    //     }
-    // }
 
-    // enable_method_auth! {
-    //     // define auth rules
-    //     roles {
-    //         executive => updatable_by: [OWNER];
-    //         // staff => updatable_by: [manager, OWNER];
-    //     }
-        // decide which methods are public and which are restricted to certain roles
-        // methods {
-        //     buy_candy => PUBLIC;
-        //     buy_chocolate_egg => PUBLIC;
-        //     get_prices => PUBLIC;
-        //     set_candy_price => restrict_to: [manager, OWNER];
-        //     set_chocolate_egg_price => restrict_to: [manager, OWNER];
-        //     mint_staff_badge => restrict_to: [manager, OWNER];
-        //     restock_store => restrict_to: [staff, manager, OWNER];
-        //     withdraw_earnings => restrict_to: [OWNER];
-        // }
-    // }
+    enable_method_auth! {
+        roles {
+            executive => updatable_by: [OWNER];
+        },
+
+        methods {
+            // initiate => restrict_to: [OWNER];
+            mint_executive_badge => restrict_to: [OWNER];
+            make_an_executive => restrict_to: [OWNER];
+            transfer_xrds_to_withdrawal_seeker => PUBLIC;
+            approve_or_deny_withdrawal_request => restrict_to: [executive, OWNER];
+            withdraw_money => PUBLIC;
+            obtain_community_token => PUBLIC;
+            request_withdrawal => PUBLIC;
+            create_praposal => PUBLIC;
+            vote => PUBLIC;
+            execute_proposal => PUBLIC;
+            create_zero_coupon_bond => PUBLIC;
+            purchase_bond => PUBLIC;
+            sell_bond => PUBLIC;
+            check_bond_maturity => PUBLIC;
+            get_bond_details => PUBLIC;
+            send_money_to_dao_treasury => PUBLIC;
+            withdraw_power => PUBLIC;
+            // get_usd_price => PUBLIC;
+            // get_proposal_id => PUBLIC;
+            create_proposal_to_mint_more_dao_tokens => PUBLIC;
+            mint_more_tokens => PUBLIC;
+            set_price => PUBLIC;
+            execute_proposal_to_mint_more_tokens => PUBLIC;
+            get_back_the_collateral => PUBLIC;
+            liquidate_collateral => PUBLIC;
+            claim_the_invested_XRDs_plus_interest => PUBLIC;
+            take_out_the_invested_XRDs_by_the_community => PUBLIC;
+            put_in_money_plus_interest_for_the_community_to_redeem => PUBLIC;
+            check_the_balance_of_bond_issuer => PUBLIC;
+            transfer_xrds_to_community_vault => PUBLIC;
+            create_proposal_to_change_token_price => PUBLIC;
+            execute_proposal_to_change_token_price => PUBLIC;
+            get_all_contributors => PUBLIC;
+            get_all_proposals => PUBLIC;
+            get_bond_creator_addresses => PUBLIC;
+            get_bond_creators => PUBLIC;
+            get_bond_creator_and_details => PUBLIC;
+            get_investment_details => PUBLIC;
+            get_created_proposals => PUBLIC;
+            get_proposal_using_proposal_id => PUBLIC;
+            get_executives => PUBLIC;
+        }
+
+    }
+
 
     pub struct TokenWeigtedDao {
         // current_praposal: Option<Global<TokenWeightProposal>>,
@@ -165,25 +194,7 @@ mod radixdao {
 
             let executive_badge_description = format!("{}'s executive badge", &organization_name);
 
-            // let executive_badges : Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
-            // .divisibility(0)
-            // .metadata(metadata!{
-            //     init{
-            //         "name" => executive_badge_description, locked;
-            //         "icon_url" => Url::of(&org_ico_url), locked;
-            //     }
-            // })
-            // .mint_roles(mint_roles! {
-            //     // A good minting rule is described in example 08
-            //     minter => rule!(allow_all);
-            //     minter_updater => rule!(deny_all);
-            // })
-            // .mint_initial_supply(3)
-            // .into();
-
-            // let executive_token_address = executive_badges.resource_address();
-
-            // create a new Staff Badge resource manager
+            // create a new Executive Badge resource manager
             let executive_badges_manager =  
                 ResourceBuilder::new_integer_non_fungible::<ExecutiveBadge>(OwnerRole::None)
                     .metadata(metadata!(
@@ -282,9 +293,9 @@ mod radixdao {
                     .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
                         owner_token_addresss.clone()
                     ))))
-                    // .roles(roles!(
-                    //     // manager => rule!(require(manager_badge.resource_address()));
-                    //     executive => rule!(require(executive_badges_manager.address()));))
+                    .roles(roles!(
+                        // manager => rule!(require(manager_badge.resource_address()));
+                        executive => rule!(require(executive_badges_manager.address()));))
                     .with_address(address_reservation.clone())
                     .globalize();
                 }
@@ -337,6 +348,9 @@ mod radixdao {
                     .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
                         owner_token_addresss.clone()
                     ))))
+                    .roles(roles!(
+                        // manager => rule!(require(manager_badge.resource_address()));
+                        executive => rule!(require(executive_badges_manager.address()));))
                     .with_address(address_reservation.clone())
                     .globalize();
                 }
@@ -387,6 +401,9 @@ mod radixdao {
                     .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
                         owner_token_addresss.clone()
                     ))))
+                    .roles(roles!(
+                        // manager => rule!(require(manager_badge.resource_address()));
+                        executive => rule!(require(executive_badges_manager.address()));))
                     .with_address(address_reservation.clone())
                     .globalize();
                 }
@@ -526,7 +543,7 @@ mod radixdao {
             (component, owner_badge)
         }
 
-        pub fn get_discriminator(&self) -> u64 {
+        fn get_discriminator(&self) -> u64 {
             let current_epoch = Runtime::current_epoch();
             let unique_number = current_epoch.number();
             unique_number
@@ -964,13 +981,9 @@ mod radixdao {
             self.shares.take(power_amount * self.buy_back_price)
         }
 
-        pub fn get_usd_price() -> Decimal {
-            let usd_price = Runtime::get_usd_price();
-            usd_price
-        }
 
         //get_unique_random_number
-        pub fn get_proposal_id() -> u64 {
+        fn get_proposal_id() -> u64 {
             let current_epoch = Runtime::current_epoch();
             let unique_number: u64 = current_epoch.number();
             unique_number
@@ -1664,7 +1677,7 @@ mod radixdao {
             self.contributors.clone()
         }
 
-        pub fn update_bond_vault_and_store(&mut self, desired_bond: Bucket) {
+        fn update_bond_vault_and_store(&mut self, desired_bond: Bucket) {
             let desired_resource_address: ResourceAddress = desired_bond.resource_address();
             if !self.bonds.contains_key(&desired_resource_address) {
                 self.bonds.insert(

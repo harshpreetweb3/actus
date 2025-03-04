@@ -13,9 +13,8 @@ struct ExecutiveBadge {
 
 #[derive(ScryptoSbor, Clone)]
 pub struct ApprovalDetails {
-    approver_address: ComponentAddress,
-    approver_response: ApprovalResponse,
-    user_address: ComponentAddress,
+    approval_giver_addresses: Vec<ComponentAddress>,
+    denial_giver_addresses: Vec<ComponentAddress>,
     approvals: u32,
     denials: u32,
 }
@@ -592,8 +591,8 @@ mod radixdao {
             });
         }
 
-        pub fn transfer_xrds_to_withdrawal_seeker(&self, to_account : Global<Account>, resource : Bucket) {
-
+        pub fn transfer_xrds_to_withdrawal_seeker(&self, mut to_account : Global<Account>, resource : Bucket) {
+            to_account.try_deposit_or_abort(resource, None);
         }
 
         pub fn obtain_community_token(  
@@ -748,10 +747,10 @@ mod radixdao {
          */
         
 
-        pub fn approve_withdrawal_request(
+        pub fn approve_or_deny_withdrawal_request(
             &mut self,
             approver_address: ComponentAddress,
-            user_address: ComponentAddress,
+            mut user_address: Global<Account>,
             response: ApprovalResponse,
         ) -> Result<(), String> {
             // check whether a caller is executive or not
@@ -762,46 +761,89 @@ mod radixdao {
             }
 
             // Check if the user has a withdrawal request
-            if !self.withdraw_requests.contains_key(&user_address) {
+            if !self.withdraw_requests.contains_key(&user_address.address()) {
                 return Err(format!(
                     "No withdrawal request found for this user address {:?}",
                     user_address
                 ));
             }
 
-            // Get or initialize the approval details for the user
-            let approval_details =
-                self.approval_details
-                    .entry(user_address)
-                    .or_insert(ApprovalDetails {
-                        approver_address,
-                        approver_response: response.clone(),
-                        user_address,
-                        approvals: 0,
-                        denials: 0,
-                    });
+            // Get the approval details for the user
+            let approval_details = self.approval_details.entry(user_address.address()).or_insert(ApprovalDetails {
+                approval_giver_addresses: Vec::new(),
+                denial_giver_addresses: Vec::new(),
+                approvals: 0,
+                denials: 0,
+            });
 
-            // Update the approval details based on the response
-            match response {
-                ApprovalResponse::Approve => approval_details.approvals += 1,
-                ApprovalResponse::Deny => approval_details.denials += 1,
+            match response{
+                ApprovalResponse::Approve => {
+                    // Check if the approver has already approved the request
+                    if approval_details.approval_giver_addresses.contains(&approver_address) {
+                        return Err(format!(
+                            "Approver address {:?} has already approved the request",
+                            approver_address
+                        ));
+                    }
+
+                    approval_details.approvals += 1;
+                    approval_details.approval_giver_addresses.push(approver_address);
+                }
+
+                ApprovalResponse::Deny => {
+                    // Check if the approver has already denied the request
+                    if approval_details.denial_giver_addresses.contains(&approver_address) {
+                        return Err(format!(
+                            "Approver address {:?} has already denied the request",
+                            approver_address
+                        ));
+                    }
+
+                    approval_details.denials += 1;
+                    approval_details.denial_giver_addresses.push(approver_address);
+                }
+            }
+
+            // Check if the request has been acknowledged by all executives
+            if approval_details.approvals + approval_details.denials == 3 {
+                // Check if the request has been approved by at least 2 executives
+                if approval_details.approvals > approval_details.denials {
+                    // Withdraw the money
+
+                    let demanded_xrds = self.withdraw_requests.get(&user_address.address()).unwrap();
+                    let bucket = self.shares.take(demanded_xrds.clone());
+
+                    user_address.try_deposit_or_abort(bucket, None);
+                    
+                    //as request is approved, remove the request
+                    self.withdraw_requests.remove(&user_address.address());
+                    //also remove the approval details
+                    self.approval_details.remove(&user_address.address());
+                }
+
+                // Remove the approval details
+                self.approval_details.remove(&user_address.address());
+                //also remove the withdrawal request
+                self.withdraw_requests.remove(&user_address.address());
             }
 
             Ok(())
         }
 
-        pub fn get_approval_details(
-            &self,
-            user_address: ComponentAddress,
-        ) -> Option<ApprovalDetails> {
-            self.approval_details.get(&user_address).cloned()
-        }
 
-        pub fn add_executives(&mut self, new_executives: [ComponentAddress; 3]) {
-            for address in new_executives {
-                self.executives.insert(address);
-            }
+        
 
+        // pub fn get_approval_details(
+        //     &self,
+        //     user_address: ComponentAddress,
+        // ) -> Option<ApprovalDetails> {
+        //     self.approval_details.get(&user_address).cloned()
+        // }
+
+        // pub fn add_executives(&mut self, new_executives: [ComponentAddress; 3]) {
+        //     for address in new_executives {
+        //         self.executives.insert(address);
+        //     }
             // Emit event
             // let event_metadata = ExecutivesAdded {
             //     new_executives: new_executives.to_vec(),
@@ -815,7 +857,7 @@ mod radixdao {
             //     component_address,
             //     meta_data: DaoEvent::ExecutivesAdded(event_metadata),
             // });
-        }
+        // }
 
         pub fn withdraw_money(
             &mut self,

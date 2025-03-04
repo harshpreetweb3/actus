@@ -817,8 +817,8 @@ mod radixdao {
                     approval_details.denial_giver_addresses.push(approver_address);
 
                     // Add event emission for denial
-                    let event_metadata = WithdrawalRequestApprovedOrDenied {
-                        approver_address,
+                    let event_metadata = WithdrawalRequestDenied {
+                        disapprover_address : approver_address,
                         user_address: user_address.address(),
                         is_approved: false,
                     };

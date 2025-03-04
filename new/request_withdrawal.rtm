@@ -1,0 +1,6 @@
+CALL_METHOD
+Address("component_tdx_2_1cqx6e03gvayht92nka9ejh5tdr56qskqe4vv3fquwx8dygr5luzx4h")
+"request_withdrawal"
+Address("account_tdx_2_128yjd03xwxxk5pd0sn25k5g6kx372muf5z9gzkcmmkrndsh0wsk22j")
+Decimal("100")
+;

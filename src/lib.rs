@@ -569,11 +569,15 @@ mod radixdao {
             executive_badge_bucket
         }
 
-        pub fn make_an_executive(&self, mut to_account: Global<Account>, resource: Bucket) {
+        pub fn make_an_executive(&mut self, mut to_account: Global<Account>, resource: Bucket) {
 
             let resource_address = resource.resource_address();
 
+            let receiver = to_account.address();
+
             to_account.try_deposit_or_abort(resource, None);
+
+            self.executives.insert(receiver);
 
             let event_metadata = ExecutiveAppointed {
                 account_address: to_account.address(),
@@ -760,8 +764,8 @@ mod radixdao {
             // Check if the user has a withdrawal request
             if !self.withdraw_requests.contains_key(&user_address) {
                 return Err(format!(
-                    "No withdrawal request found for this user address",
-                    // user_address
+                    "No withdrawal request found for this user address {:?}",
+                    user_address
                 ));
             }
 

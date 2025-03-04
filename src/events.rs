@@ -63,7 +63,15 @@ pub enum EventType {
 
     WITHDRAWAL_REQUESTED_SUCCESSFULLY,
 
-    WITHDRAWAL_REQUEST_FAILED
+    WITHDRAWAL_REQUEST_FAILED,
+
+    WITHDRAWAL_REQUEST_APPROVED,
+
+    WITHDRAWAL_REQUEST_DENIED,
+
+    FUNDS_WITHDRAWN,
+
+    FUNDS_NOT_WITHDRAWN,
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
@@ -209,10 +217,15 @@ pub enum DaoEvent {
 
     WithdrawalRequested(WithdrawalRequested),
 
-    WithdrawalRequestFailed(WithdrawalRequested)
+    WithdrawalRequestFailed(WithdrawalRequested),
 
-    
+    WithdrawalRequestApproved(WithdrawalRequestApprovedOrDenied),
 
+    WithdrawalRequestDenied(WithdrawalRequestApprovedOrDenied),
+
+    FundsWithdrawn(FundsWithdrawn),
+
+    FundsNotWithdrawn(FundsNotWithdrawn)
 
 }
 
@@ -455,3 +468,23 @@ pub struct WithdrawalRequested {
 //     pub amount: Decimal,
 //     pub max_withdrawal_amount : 
 // }
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct WithdrawalRequestApprovedOrDenied {
+    pub approver_address: ComponentAddress,
+    pub user_address: ComponentAddress,
+    pub is_approved : bool,
+}
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct FundsWithdrawn {
+    pub user_address: ComponentAddress,
+    pub requested_amount: Decimal,
+}
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct FundsNotWithdrawn {
+    pub user_address: ComponentAddress,
+    pub requested_amount: Decimal,
+}
+

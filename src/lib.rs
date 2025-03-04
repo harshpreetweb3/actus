@@ -788,6 +788,20 @@ mod radixdao {
 
                     approval_details.approvals += 1;
                     approval_details.approval_giver_addresses.push(approver_address);
+
+                    // Add event emission for approval
+                    let event_metadata = WithdrawalRequestApprovedOrDenied {
+                        approver_address,
+                        user_address: user_address.address(),
+                        is_approved: true,
+                    };
+
+                    Runtime::emit_event(PandaoEvent {
+                        event_type: EventType::WITHDRAWAL_REQUEST_APPROVED,
+                        dao_type: DaoType::Investment,
+                        component_address: Runtime::global_address(),
+                        meta_data: DaoEvent::WithdrawalRequestApproved(event_metadata),
+                    });
                 }
 
                 ApprovalResponse::Deny => {
@@ -801,6 +815,20 @@ mod radixdao {
 
                     approval_details.denials += 1;
                     approval_details.denial_giver_addresses.push(approver_address);
+
+                    // Add event emission for denial
+                    let event_metadata = WithdrawalRequestApprovedOrDenied {
+                        approver_address,
+                        user_address: user_address.address(),
+                        is_approved: false,
+                    };
+
+                    Runtime::emit_event(PandaoEvent {
+                        event_type: EventType::WITHDRAWAL_REQUEST_DENIED,
+                        dao_type: DaoType::Investment,
+                        component_address: Runtime::global_address(),
+                        meta_data: DaoEvent::WithdrawalRequestDenied(event_metadata),
+                    });
                 }
             }
 
@@ -810,8 +838,8 @@ mod radixdao {
                 if approval_details.approvals > approval_details.denials {
                     // Withdraw the money
 
-                    let demanded_xrds = self.withdraw_requests.get(&user_address.address()).unwrap();
-                    let bucket = self.shares.take(demanded_xrds.clone());
+                    let demanded_xrds = *self.withdraw_requests.get(&user_address.address()).unwrap();
+                    let bucket = self.shares.take(demanded_xrds);
 
                     user_address.try_deposit_or_abort(bucket, None);
                     
@@ -819,6 +847,42 @@ mod radixdao {
                     self.withdraw_requests.remove(&user_address.address());
                     //also remove the approval details
                     self.approval_details.remove(&user_address.address());
+
+                    // Emit event
+                    let event_metadata = FundsWithdrawn {
+                        user_address: user_address.address(),
+                        requested_amount: demanded_xrds,
+                    };
+
+                    Runtime::emit_event(PandaoEvent {
+                        event_type: EventType::FUNDS_WITHDRAWN,
+                        dao_type: DaoType::Investment,
+                        component_address: Runtime::global_address(),
+                        meta_data: DaoEvent::FundsWithdrawn(event_metadata),
+                    });
+
+
+                } else {
+                    // Emit event indicating the request is denied
+                    let demanded_xrds = *self.withdraw_requests.get(&user_address.address()).unwrap();
+
+                    //as request is denied, remove the request
+                    self.withdraw_requests.remove(&user_address.address());
+                    //also remove the approval details
+                    self.approval_details.remove(&user_address.address());
+
+                    // Emit event
+                    let event_metadata = FundsNotWithdrawn {
+                        user_address: user_address.address(),
+                        requested_amount: demanded_xrds,
+                    };
+
+                    Runtime::emit_event(PandaoEvent {
+                        event_type: EventType::FUNDS_NOT_WITHDRAWN,
+                        dao_type: DaoType::Investment,
+                        component_address: Runtime::global_address(),
+                        meta_data: DaoEvent::FundsNotWithdrawn(event_metadata),
+                    });
                 }
 
                 // Remove the approval details

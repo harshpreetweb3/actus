@@ -1,0 +1,18 @@
+CALL_METHOD
+    Address("account_tdx_2_128al6l882wwvd3lw9zt9fvsxfpw80ept4f9gd92fh3t2fcnuqhmug7")
+    "create_proof_of_amount"
+    Address("resource_tdx_2_1tkkzdw29heeerr8nmjftl0eks036evf4lx405kqh7lye05njyr7hy0")
+    Decimal("1")
+
+CALL_METHOD
+  Address("component_tdx_2_1crz2laanqcmnc3q9tgts40q0tm8ymdrdjsaefyc05ddy9uut96f85h")
+  "mint_executive_badge"
+  "Abdullah Ahmed"
+;
+
+CALL_METHOD
+    Address("account_tdx_2_128al6l882wwvd3lw9zt9fvsxfpw80ept4f9gd92fh3t2fcnuqhmug7")
+    "try_deposit_batch_or_refund"
+    Expression("ENTIRE_WORKTOP")
+    Enum<0u8>()
+;

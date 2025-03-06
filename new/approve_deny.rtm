@@ -1,0 +1,14 @@
+CALL_METHOD
+Address("component_tdx_2_1cz782rgglm5xct03zjd9enajp5ft0xdj78lmt7hlg2tn4wlf6wkv0y")
+"approve_or_deny_withdrawal_request"
+Address("account_tdx_2_128al6l882wwvd3lw9zt9fvsxfpw80ept4f9gd92fh3t2fcnuqhmug7")
+Address("account_tdx_2_129rm89k7uuqta4e8catha9cfy93mfsedl4l0ktgy72xn74dqnu69y9")
+Enum<0u8>( )
+;
+
+CALL_METHOD
+    Address("account_tdx_2_128al6l882wwvd3lw9zt9fvsxfpw80ept4f9gd92fh3t2fcnuqhmug7")
+    "try_deposit_batch_or_refund"
+    Expression("ENTIRE_WORKTOP")
+    Enum<0u8>()
+;

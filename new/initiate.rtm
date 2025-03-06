@@ -1,8 +1,8 @@
 CALL_FUNCTION
-  Address("package_tdx_2_1phvwll0en8q9ya98e54jl76lcyhsrnd2fj45g89prjgtqvwrmrpdps")
+  Address("package_tdx_2_1pk860j2r9csa20v6293nfrzgefu2un6g4450g8udpxqh03zrzz5aq8")
   "TokenWeigtedDao"
   "initiate"
-  "wmk"
+  "save the world"
   10000i32
   0u8
   Decimal("5")
@@ -17,7 +17,7 @@ CALL_FUNCTION
 ;
 
 CALL_METHOD
-    Address("account_tdx_2_128yjd03xwxxk5pd0sn25k5g6kx372muf5z9gzkcmmkrndsh0wsk22j")
+    Address("account_tdx_2_128al6l882wwvd3lw9zt9fvsxfpw80ept4f9gd92fh3t2fcnuqhmug7")
     "try_deposit_batch_or_refund"
     Expression("ENTIRE_WORKTOP")
     Enum<0u8>()

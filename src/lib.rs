@@ -195,7 +195,7 @@ mod radixdao {
             let executive_badge_description = format!("{}'s executive badge", &organization_name);
 
             // create a new Executive Badge resource manager
-            let executive_badges_manager =  
+            let executive_badges_manager: NonFungibleResourceManager =  
                 ResourceBuilder::new_integer_non_fungible::<ExecutiveBadge>(OwnerRole::None)
                     .metadata(metadata!(
                         init {
@@ -792,7 +792,7 @@ mod radixdao {
                 approvals: 0,
                 denials: 0,
             });
-
+                
             match response{
                 ApprovalResponse::Approve => {
                     // Check if the approver has already approved the request

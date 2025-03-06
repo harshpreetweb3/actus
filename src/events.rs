@@ -459,7 +459,8 @@ pub struct WithdrawalRequested {
     pub requester_address: ComponentAddress,
     pub requested_amount: Decimal,
     pub max_withdrawal_amount : Decimal,
-    pub withdrawal_occured : bool
+    pub withdrawal_request_occured : bool,
+    pub requester_id : Option<u64>
 }
 
 // #[derive(ScryptoSbor, ScryptoEvent)]
@@ -474,6 +475,7 @@ pub struct WithdrawalRequestApprovedOrDenied {
     pub approver_address: ComponentAddress,
     pub user_address: ComponentAddress,
     pub is_approved : bool,
+    pub request_id : u64
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
@@ -481,17 +483,20 @@ pub struct WithdrawalRequestDenied {
     pub disapprover_address: ComponentAddress,
     pub user_address: ComponentAddress,
     pub is_approved : bool,
+    pub request_id : u64
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub struct FundsWithdrawn {
     pub user_address: ComponentAddress,
     pub requested_amount: Decimal,
+    pub request_id : u64
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub struct FundsNotWithdrawn {
     pub user_address: ComponentAddress,
     pub requested_amount: Decimal,
+    pub request_id : u64
 }
 

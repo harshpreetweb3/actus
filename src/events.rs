@@ -444,7 +444,9 @@ pub struct ClaimInvestedXRDsPlusInterestErrorEvent {
 pub struct ExecutiveBadgeMinted {
     pub name: String,
     pub number: u64,
-    pub resource_address : ResourceAddress
+    pub resource_address : ResourceAddress,
+    pub local_id : NonFungibleLocalId,
+    pub global_id : NonFungibleGlobalId
 }
 
 

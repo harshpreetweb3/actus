@@ -568,11 +568,16 @@ mod radixdao {
             );
 
             let resource_address = executive_badge_bucket.resource_address();
+            let local_id: NonFungibleLocalId = executive_badge_bucket.non_fungible_local_id();
+            let global_id: NonFungibleGlobalId = executive_badge_bucket.non_fungible_global_id();
+            
 
             let event_metadata = ExecutiveBadgeMinted { 
                 name,
                 number : discriminator,
-                resource_address
+                resource_address,
+                local_id,
+                global_id
             };
 
             Runtime::emit_event(events::PandaoEvent {

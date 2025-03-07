@@ -822,7 +822,7 @@ mod radixdao {
                     approval_details.approval_giver_addresses.push(approver_address);
 
                     // Add event emission for approval
-                    let event_metadata = WithdrawalRequestApprovedOrDenied {
+                    let event_metadata = WithdrawalRequestApproved {
                         approver_address,
                         user_address: user_address.address(),
                         is_approved: true,
@@ -922,9 +922,9 @@ mod radixdao {
                 }
 
                 // Remove the approval details
-                self.approval_details.remove(&request_id);
+                // self.approval_details.remove(&request_id);
                 //also remove the withdrawal request
-                self.withdraw_requests.remove(&request_id);
+                // self.withdraw_requests.remove(&request_id);
             }
 
             Ok(())

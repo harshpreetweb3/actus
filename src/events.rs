@@ -219,7 +219,7 @@ pub enum DaoEvent {
 
     WithdrawalRequestFailed(WithdrawalRequested),
 
-    WithdrawalRequestApproved(WithdrawalRequestApprovedOrDenied),
+    WithdrawalRequestApproved(WithdrawalRequestApproved),
 
     WithdrawalRequestDenied(WithdrawalRequestDenied),
 
@@ -473,7 +473,7 @@ pub struct WithdrawalRequested {
 // }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
-pub struct WithdrawalRequestApprovedOrDenied {
+pub struct WithdrawalRequestApproved {
     pub approver_address: ComponentAddress,
     pub user_address: ComponentAddress,
     pub is_approved : bool,

@@ -1,0 +1,29 @@
+CALL_METHOD
+    Address("account_tdx_2_128al6l882wwvd3lw9zt9fvsxfpw80ept4f9gd92fh3t2fcnuqhmug7")
+    "create_proof_of_amount"
+    Address("resource_tdx_2_1thprgdpnkx9n82aj8nsh0geupayu522m66rz0epn0ehvqwhx7gd537")
+    Decimal("1")
+;
+
+RECALL_NON_FUNGIBLES_FROM_VAULT
+    Address("account_tdx_2_129rm89k7uuqta4e8catha9cfy93mfsedl4l0ktgy72xn74dqnu69y9") 
+    Array<NonFungibleLocalId>(
+        NonFungibleLocalId("#85351#"),
+    )
+;
+
+TAKE_ALL_FROM_WORKTOP
+    Address("resource_tdx_2_1n29u6m9j4mqkgqwfddnfvt0w6v04enc863688a528spmfjxsvk4c4q")
+    Bucket("executive_badge_bucket")
+;
+
+CALL_METHOD
+    Address("account_tdx_2_128al6l882wwvd3lw9zt9fvsxfpw80ept4f9gd92fh3t2fcnuqhmug7")
+    "create_proof_of_amount"
+    Address("resource_tdx_2_1thprgdpnkx9n82aj8nsh0geupayu522m66rz0epn0ehvqwhx7gd537")
+    Decimal("1")
+;
+
+BURN_RESOURCE
+    Bucket("executive_badge_bucket")
+;

@@ -590,19 +590,25 @@ mod radixdao {
             executive_badge_bucket
         }
 
-        pub fn make_an_executive(&mut self, mut to_account: Global<Account>, resource: Bucket) {
+        pub fn make_an_executive(&mut self, mut to_account: Global<Account>, resource: NonFungibleBucket) {
 
             let resource_address = resource.resource_address();
 
+            let local_id = resource.non_fungible_local_id();
+
             let receiver = to_account.address();
 
-            to_account.try_deposit_or_abort(resource, None);
+            // let new_bucket : &Bucket = resource.as_ref();
+            let new_bucket : Bucket = resource.into();
+
+            to_account.try_deposit_or_abort(new_bucket, None);
 
             self.executives.insert(receiver);
 
             let event_metadata = ExecutiveAppointed {
                 account_address: to_account.address(),
-                resource_address
+                resource_address,
+                local_id
             };
 
             Runtime::emit_event(events::PandaoEvent {

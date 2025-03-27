@@ -10,6 +10,7 @@ Address("component_tdx_2_1czgnfv6zt57cxv7uvc327l4waz59k0y7xfszjf48kzr435z68j926m
 "approve_or_deny_withdrawal_request"
 Address("account_tdx_2_128al6l882wwvd3lw9zt9fvsxfpw80ept4f9gd92fh3t2fcnuqhmug7")
 Address("account_tdx_2_128al6l882wwvd3lw9zt9fvsxfpw80ept4f9gd92fh3t2fcnuqhmug7")
+86318u64
 Enum<0u8>( )
 ;
 
@@ -24,17 +25,18 @@ CALL_METHOD
 CALL_METHOD
     Address("account_tdx_2_128al6l882wwvd3lw9zt9fvsxfpw80ept4f9gd92fh3t2fcnuqhmug7")
     "create_proof_of_non_fungibles"
-    Address("resource_tdx_2_1n29u6m9j4mqkgqwfddnfvt0w6v04enc863688a528spmfjxsvk4c4q")
+    Address("resource_tdx_2_1nth5q7lnwpm0yc26pp0mckenn8muvgx8eqaczp9em7gt4p4rr0y09z")
     Array<NonFungibleLocalId>(
-NonFungibleLocalId("#84844#")
+NonFungibleLocalId("#86320#")
 )
 ;
 
 CALL_METHOD
-Address("component_tdx_2_1czgnfv6zt57cxv7uvc327l4waz59k0y7xfszjf48kzr435z68j926m")
+Address("component_tdx_2_1cqx2rq96wy2ku6x7hw58580uys8hnyw2wdwt0ja9n3ycyaflan6nxx")
 "approve_or_deny_withdrawal_request"
 Address("account_tdx_2_128al6l882wwvd3lw9zt9fvsxfpw80ept4f9gd92fh3t2fcnuqhmug7")
 Address("account_tdx_2_128al6l882wwvd3lw9zt9fvsxfpw80ept4f9gd92fh3t2fcnuqhmug7")
+86318u64
 Enum<0u8>( )
 ;
 

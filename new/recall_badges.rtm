@@ -6,7 +6,7 @@ CALL_METHOD
 ;
 
 RECALL_NON_FUNGIBLES_FROM_VAULT
-    Address("account_tdx_2_129rm89k7uuqta4e8catha9cfy93mfsedl4l0ktgy72xn74dqnu69y9") 
+    Address("internal_vault_tdx_2_1nq35pj3np3f470fa5x59yxkl6u3cl7tv8xf2a3uy9kr5u5dtpgjv8c") 
     Array<NonFungibleLocalId>(
         NonFungibleLocalId("#85351#"),
     )

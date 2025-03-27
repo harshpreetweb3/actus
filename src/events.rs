@@ -453,7 +453,8 @@ pub struct ExecutiveBadgeMinted {
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub struct ExecutiveAppointed {
     pub account_address: ComponentAddress,
-    pub resource_address : ResourceAddress
+    pub resource_address : ResourceAddress,
+    pub local_id : NonFungibleLocalId
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]

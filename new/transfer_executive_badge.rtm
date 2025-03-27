@@ -9,7 +9,7 @@ CALL_METHOD
              Address("account_tdx_2_128al6l882wwvd3lw9zt9fvsxfpw80ept4f9gd92fh3t2fcnuqhmug7")
              "withdraw"
              Address("resource_tdx_2_1n29u6m9j4mqkgqwfddnfvt0w6v04enc863688a528spmfjxsvk4c4q")
-             Decimal("1")
+             Decimal("1")   
          ;
 
 TAKE_FROM_WORKTOP
